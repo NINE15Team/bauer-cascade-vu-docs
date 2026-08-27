@@ -87,6 +87,12 @@ main{min-width:0;padding:2.4rem 0 5rem;max-width:var(--maxw);grid-column:2}
 #sitenav a{display:block;padding:.32rem 0 .32rem .72rem;color:var(--warm);text-decoration:none;
   border-left:2px solid var(--border);transition:.14s;border-radius:0 4px 4px 0}
 #sitenav a:hover{color:var(--ink);border-left-color:var(--warm);background:var(--surface)}
+#sitenav a.sub{padding-left:1.7rem;font-size:.955em;border-left-color:transparent;
+  position:relative}
+#sitenav a.sub::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;
+  background:var(--border)}
+#sitenav a.sub:hover::before{background:var(--warm)}
+#sitenav a.sub.here::before{background:var(--accent)}
 #sitenav a.here{color:var(--accent-text);border-left-color:var(--accent);font-weight:650;
   background:var(--accent-wash)}
 #navscrim{display:none;position:fixed;inset:0;z-index:44;background:rgba(0,0,0,.42)}

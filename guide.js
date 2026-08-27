@@ -27,6 +27,7 @@
     ]],
     ['Bauer', [
       ['bauer.html', 'Architecture'],
+      ['code-reference.html', 'Code reference', 'sub'],
       ['operations-guide.html', 'Operations'],
       ['sentry.html', 'Sentry'],
       ['restore.html', 'Restore selections']
@@ -57,8 +58,10 @@
       html += '<div class="grp"><p class="lbl">' + g[0] + '</p>';
       g[1].forEach(function (it) {
         var on = it[0] === here;
-        html += '<a href="./' + it[0] + '"' + (on ? ' class="here" aria-current="page"' : '') +
-                '>' + it[1] + '</a>';
+        var cls = (it[2] === 'sub' ? 'sub' : '') + (on ? (it[2] === 'sub' ? ' here' : 'here') : '');
+        cls = cls.trim();
+        html += '<a href="./' + it[0] + '"' + (cls ? ' class="' + cls + '"' : '') +
+                (on ? ' aria-current="page"' : '') + '>' + it[1] + '</a>';
       });
       html += '</div>';
     });
