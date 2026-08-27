@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Restore selections — VU Customizers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<link rel="stylesheet" href="./guide.css">
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <a class="brand" href="./index.html"><span class="dot"></span><b>VU Customizers</b></a>
+  <button class="tbtn" id="tt" type="button">Dark</button>
+</div></header>
+<div class="wrap"><nav class="toc toc-d" aria-label="Contents">
+  <h2>On this page</h2>
+  <a href="#state">State</a>
+  <a href="#api">The element API</a>
+  <a href="#flow">Flow</a>
+  <a href="#map">Field map</a>
+  <a href="#demo">Running it</a>
+  <a href="#next">Outstanding</a>
+</nav>
+<details class="toc toc-m"><summary>On this page</summary><div class="in">
+  <a href="#state">State</a>
+  <a href="#api">The element API</a>
+  <a href="#flow">Flow</a>
+  <a href="#map">Field map</a>
+  <a href="#demo">Running it</a>
+  <a href="#next">Outstanding</a>
+</div></details>
+<main>
+
+<h1>Restore selections</h1>
+<p class="lede">POC for DIG / James: apply a saved recipe through VU's element API after the scene renders. The approach is proven. It is not enabled for shoppers.</p>
+
+<div class="gold">
+  <p class="tag">Production state</p>
+  <p>The script tag in <code>vu_customizer_snippet.liquid</code> (L43) is wrapped in <code>{% comment %}</code>. The asset still ships. Nothing runs until it is uncommented — and when it does, it forces every skate to one hardcoded recipe.</p>
+</div>
+
+<h2 id="state">State</h2>
+<div class="tablewrap">
+<table>
+<thead><tr><th></th><th></th></tr></thead>
+<tbody>
+<tr><td>File</td><td><code>sites/_shared/assets/vu_customizer_restore_selections.js</code></td></tr>
+<tr><td>Loader</td><td>Snippet L42–43, commented, <code>defer</code></td></tr>
+<tr><td>Data source</td><td><code>MOCK_SELECTIONS</code> constant. No API exists.</td></tr>
+<tr><td>Verified on</td><td>Supreme Shadow, Bauer US/CA dev, against live <code>customizer.recipe</code></td></tr>
+<tr><td>Persistence</td><td>None. No localStorage keys — do not go looking.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="api">The element API — and its one trap</h2>
+<div class="call warn">
+  <span class="lab"><code>setValue()</code> fails silently</span>
+  <p>Passing an invalid code does not throw and does not warn. The element silently retains its previous value. You must read back and compare — there is no other way to know a write landed.</p>
+</div>
+<pre>customizer.elements[code].setValue(vuCode)
+// no error on a bad code — previous value silently retained
+// read back element.value.code (or .name) and compare</pre>
+<p>Recipe read-back shape:</p>
+<pre>color.value              → { name: 'RED',     code: 'red' }
+size_right.value (half)  → { name: '7 1/2',   code: '7_1-2' }
+fit.value                → { name: 'FIT 3',   code: 'fit_3' }
+tongue_personalization_name.value
+                         → { name: 'LINDROS', code: 'LINDROS' }</pre>
+
+<h2 id="flow">Flow</h2>
+<ol class="steps">
+  <li><p>Wait for <code>window.customizer.elements</code>, or the first <code>customizer.scene-rendered</code> (<code>{ once: true }</code>).</p></li>
+  <li><p>Render a debug banner of the current <code>customizer.recipe</code> — top-left, collapsible, resynced on <code>customizer.recipe-updates-complete</code>.</p></li>
+  <li><p>Apply <code>MOCK_SELECTIONS</code> <strong>sequentially</strong>. Fired in parallel, recipe updates race and writes are lost.</p></li>
+  <li><p>Per field: map key → element code → transform value → <code>setValue</code> → poll up to 1.5s. Personalization fields are debounced against the live render, so the write is not immediately observable.</p></li>
+  <li><p>Toast + console: <code>N/M applied</code>, with VU's real rejection string for misses. Console prefix <code>[VU restore selections]</code>.</p></li>
+</ol>
+<p>Mock payload — Lindros, chosen because it is instantly visible on the tongue:</p>
+<pre>{
+  color: 'red',
+  sizeLeft: 7,
+  sizeRight: 7.5,   // → "7_1-2", display "7 1/2"
+  fit: 3,           // → "fit_3"
+  tongue: 'classic_molded_felt_black',
+  playerNumber: 88,
+  playerName: 'LINDROS'
+}</pre>
+
+<h2 id="map">Field map</h2>
+<p>Confirmed on Supreme Shadow.</p>
+<div class="tablewrap">
+<table>
+<thead><tr><th>API key</th><th>Element code</th><th>Transform</th></tr></thead>
+<tbody>
+<tr><td><code>color</code></td><td><code>color</code></td><td>as-is</td></tr>
+<tr><td><code>sizeLeft</code></td><td><code>size_left</code></td><td><code>7</code> or <code>7_1-2</code></td></tr>
+<tr><td><code>sizeRight</code></td><td><code>size_right</code></td><td>same</td></tr>
+<tr><td><code>fit</code></td><td><code>fit</code></td><td><code>fit_${n}</code></td></tr>
+<tr><td><code>tongue</code></td><td><code>tongue_model</code></td><td>as-is</td></tr>
+<tr><td><code>playerNumber</code></td><td><code>tongue_personalization_number</code></td><td>String</td></tr>
+<tr><td><code>playerName</code></td><td><code>tongue_personalization_name</code></td><td>Uppercase string</td></tr>
+</tbody>
+</table>
+</div>
+<p class="small">Excluded deliberately: <code>family</code> (FlyLite vs Supreme). That is a product/URL change, not an element.</p>
+<div class="call care">
+  <span class="lab">Skate-shaped map</span>
+  <p>Goalie steel and Fuse use different element codes. A miss against those products is a map gap, not a VU bug — do not raise it as one.</p>
+</div>
+
+<h2 id="demo">Running it</h2>
+<ol class="steps">
+  <li><p>On a <strong>dev theme only</strong>, uncomment in <code>vu_customizer_snippet.liquid</code>:</p>
+<pre>&lt;script src="{{ 'vu_customizer_restore_selections.js' | asset_url }}" defer="defer"&gt;&lt;/script&gt;</pre></li>
+  <li><p>Open Supreme Shadow, or another skate whose options include red / fit 3 / that tongue. Wait for the scene.</p></li>
+  <li><p>Expect the left recipe banner and a bottom-right toast.</p></li>
+  <li><p><strong>Re-comment before any production deploy.</strong> Left enabled it rewrites every shopper's skate to Lindros 88.</p></li>
+</ol>
+
+<div class="call care">
+  <span class="lab">Check VU's native feature first</span>
+  <p>VU Custom's platform has <strong>Starting Points</strong> — a template previewed with customization pre-applied, used to drop a shopper into the customizer with selections already set. That overlaps directly with what this POC does by hand through <code>setValue()</code>.</p>
+  <p>Before investing further here, confirm with VU whether Starting Points (or the recipe API behind <code>?recipe_id=</code>) already covers the use case. Rebuilding a platform feature in theme JS would be the expensive way to get there.</p>
+</div>
+
+<h2 id="next">Outstanding</h2>
+<ul class="check">
+  <li><b class="ct">Real data source</b><p class="why">Replace <code>MOCK_SELECTIONS</code> with a fetch. VU/DIG have not signed off an endpoint; until they do this stays a POC.</p></li>
+  <li><b class="ct">Theme UI</b><p class="why">Swap the debug banner and toast for real components.</p></li>
+  <li><b class="ct">Decide <code>family</code> handling</b><p class="why">If the API sends it, that is a redirect. Confirm with James rather than guessing an element code.</p></li>
+  <li><b class="ct">Element maps for other products</b><p class="why">Steel, goalie steel and Fuse each need a confirmed map before this extends beyond skates.</p></li>
+</ul>
+<p class="small">Sentry already treats this filename as VU-related, so production throws would be tagged correctly.</p>
+
+<div class="pager">
+  <a href="./sentry.html"><span class="dir">Previous</span><span class="ttl">&larr; Sentry</span></a>
+  <a class="nx" href="./cascade.html"><span class="dir">Next</span><span class="ttl">Cascade &rarr;</span></a>
+</div>
+
+<footer><p><a href="./bauer.html">Bauer</a> · Restore</p></footer>
+</main></div>
+<script src="./guide.js"></script>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Dependencies — VU Customizers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<link rel="stylesheet" href="./guide.css">
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <a class="brand" href="./index.html"><span class="dot"></span><b>VU Customizers</b></a>
+  <button class="tbtn" id="tt" type="button">Dark</button>
+</div></header>
+<div class="wrap wide"><nav class="toc toc-d" aria-label="Contents">
+  <h2>On this page</h2>
+  <a href="#verdict">Ownership summary</a>
+  <a href="#services">Services and integrations</a>
+  <a href="#assets">Hosted assets</a>
+  <a href="#accounts">Accounts and access</a>
+  <a href="#settings">Config held outside git</a>
+  <a href="#intent">Deliberate decisions</a>
+</nav>
+<details class="toc toc-m"><summary>On this page</summary><div class="in">
+  <a href="#verdict">Ownership summary</a>
+  <a href="#services">Services and integrations</a>
+  <a href="#assets">Hosted assets</a>
+  <a href="#accounts">Accounts and access</a>
+  <a href="#settings">Config held outside git</a>
+  <a href="#intent">Deliberate decisions</a>
+</div></details>
+<main>
+
+<h1>Dependencies</h1>
+<p class="lede">Every external service, integration, asset and account the customizers rely on, and who controls each one.</p>
+
+<div class="gold" id="verdict">
+  <p class="tag">Ownership summary</p>
+  <p><strong>No part of the running system depends on a developer account, a Nine15 account, or any other unmanaged resource.</strong> Every service in the inventory below is either a client-owned account or a public CDN.</p>
+  <p>Two things are worth knowing rather than acting on in a panic: some customizer icons are served from a client <em>development</em> store rather than production, and two Cascade theme settings exist only inside Shopify. Both are detailed below.</p>
+</div>
+
+<h2 id="services">Services and integrations</h2>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Service</th><th>Used for</th><th>Controlled by</th><th>Brand</th></tr></thead>
+<tbody>
+<tr><td><code>vu-customizer.s3.amazonaws.com/{env}/main.js</code></td><td>Front-End Customizer engine</td><td>VU Custom</td><td>Bauer</td></tr>
+<tr><td><code>vu-production.s3.amazonaws.com/customizer/main.js</code></td><td>Engine — legacy JTB bucket</td><td>VU Custom</td><td>Cascade (3 helmets)</td></tr>
+<tr><td><code>customizer.vucustom.com/{env}/main.js</code></td><td>Engine — current host</td><td>VU Custom</td><td>Cascade (Z, SL)</td></tr>
+<tr><td><code>vu-admin.s3.amazonaws.com</code></td><td>VU Admin assets</td><td>VU Custom</td><td>Bauer</td></tr>
+<tr><td><code>s3.amazonaws.com/vu-os</code></td><td>VU OS platform assets, templates</td><td>VU Custom</td><td>Bauer</td></tr>
+<tr><td><code>silhouette3.jtbcustom.com</code></td><td>Recipe thumbnail API for cart lines</td><td>VU Custom</td><td>Cascade</td></tr>
+<tr><td><code>browser.sentry-cdn.com/10.67.0/</code></td><td>Sentry SDK + httpClient, SRI-pinned</td><td>Public CDN</td><td>Bauer</td></tr>
+<tr><td>Sentry project <code>vu-customizer</code></td><td>Error tracking and alerting</td><td><strong>Peak Achievement Athletics</strong></td><td>Bauer</td></tr>
+<tr><td><code>cdn.jsdelivr.net</code> — Alpine 3.x + focus</td><td>Modal focus trap</td><td>Public CDN</td><td>Bauer</td></tr>
+<tr><td><code>a.klaviyo.com</code></td><td>Share-progress email, list opt-in</td><td><strong>Bauer</strong></td><td>Bauer</td></tr>
+<tr><td>Slack <code>#bauer-vu-nine15</code></td><td>Sentry alert delivery, vendor comms</td><td><strong>Bauer</strong> (Slack Connect)</td><td>Bauer</td></tr>
+<tr><td><code>cdn.spectrumcustomizer.com</code> and hashed <code>main.*.js</code></td><td>Legacy sticks and goalie gear</td><td>Spectrum — previous vendor</td><td>Bauer, not VU</td></tr>
+</tbody>
+</table>
+</div>
+<div class="call tip">
+  <span class="lab">Nothing agency-held</span>
+  <p>There is no Nine15 server, proxy, build pipeline, API key or hosting in the request path. The theme is plain Liquid, CSS and JS in the client's Shopify. Every runtime call goes either to VU Custom, to the client's own accounts, or to a public CDN.</p>
+</div>
+
+<h2 id="assets">Hosted assets</h2>
+<p>Customizer chrome is hardcoded to Shopify Files on two client <strong>development</strong> stores. Both are client-controlled — <code>1/0555/9818/6772</code> is <a href="https://admin.shopify.com/store/bauer-ca-dev">bauer-ca-dev</a> and <code>1/0555/9838/3422</code> is a second client dev store — so nothing is lost at handover.</p>
+<p>The consideration is that production storefronts, across every Bauer market, are reading from stores whose purpose is to be safe to break. All references sit in <code>sites/_shared</code>.</p>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Asset</th><th>Store</th><th>Referenced in</th><th>Affects</th></tr></thead>
+<tbody>
+<tr><td><code>vu-restart.svg</code></td><td>bauer-ca-dev</td><td><code>vu_main.css</code> L527</td><td>Restart icon</td></tr>
+<tr><td><code>Reset_View_Icon_….svg</code></td><td>bauer-ca-dev</td><td><code>vu_main.css</code> L535</td><td>Reset-view icon</td></tr>
+<tr><td><code>bag-16px.svg</code></td><td>bauer-ca-dev</td><td><code>vu_main.css</code> L642</td><td>Cart icon</td></tr>
+<tr><td><code>loading_….svg</code></td><td>bauer-ca-dev</td><td><code>vu_main.css</code> L647</td><td>Loading animation</td></tr>
+<tr><td><code>chevron-down-16px.svg</code></td><td>bauer-ca-dev</td><td><code>vu_main.css</code> L1034</td><td>Dropdown chevrons</td></tr>
+<tr><td><code>qrcode-24px.png</code></td><td>bauer-ca-dev</td><td><code>vu_main.css</code> L1746</td><td>QR icon</td></tr>
+<tr><td><code>Rectangle_8.svg</code></td><td>bauer-ca-dev</td><td><code>vu_main.css</code> L2959</td><td>Background shape</td></tr>
+<tr><td><code>vu-restart.svg</code></td><td><code>0555/9838/3422</code></td><td><code>vu_main.css</code> L910</td><td>Size-reset icon</td></tr>
+<tr><td><code>Game_Fit_Logo.svg</code></td><td>bauer-ca-dev</td><td><code>vu-size-guide</code>, <code>vu-fit-guide</code>, <code>vu-flex-guide</code>, <code>vu-pattern-guide</code>, <code>vu-pattern-compare</code></td><td>Game Fit branding in all guides</td></tr>
+<tr><td><code>Group_16.png</code></td><td>bauer-ca-dev</td><td><code>vu-pro-custom-card</code>, <code>pro-custom</code></td><td>Pro-custom card art</td></tr>
+<tr><td><code>QUICKTURN_LOGO.png</code></td><td>bauer-ca-dev</td><td><code>vu-pro-custom-card</code> L34</td><td>Quickturn logo</td></tr>
+</tbody>
+</table>
+</div>
+<p class="small">Store <code>0555/9838/3422</code> has a much wider footprint beyond the customizer — D-DIN fonts, Yotpo rewards imagery, loyalty logos and info icons across <code>bauer-ca</code>, <code>bauer-se</code>, <code>bauer</code> and <code>cascade-maverik</code>. Those references are outside the customizer's scope but are the same class of dependency.</p>
+<p>Correctly hosted for comparison: the fit-guide images resolve from Bauer CA production Files (<code>1/0658/4749/2861</code>), and the Bauer wordmark in <code>vu-bauer.liquid</code> is inline SVG with no external fetch at all.</p>
+
+<h2 id="accounts">Accounts and access</h2>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Account</th><th>What it gates</th><th>Held by</th></tr></thead>
+<tbody>
+<tr><td>Sentry org <code>peak-achievement-athletics</code></td><td>Error history, tags, alert rules, uptime monitor</td><td>PAA</td></tr>
+<tr><td>Klaviyo</td><td>Share-a-design emails and list opt-in</td><td>Bauer</td></tr>
+<tr><td>Shopify — Bauer CA + markets</td><td>Themes, products, metafields, metaobjects, Files</td><td>Bauer / PAA</td></tr>
+<tr><td>Shopify — Cascade prod + dev</td><td>Themes, products, metafields. Theme Access tokens are separate from staff logins.</td><td>Cascade Maverik</td></tr>
+<tr><td>VU Custom relationship</td><td>Templates, 3D assets, option sets, engine builds, recipe API</td><td>PAA ↔ VU Custom</td></tr>
+<tr><td><a href="https://docs.google.com/spreadsheets/d/1e-8J2PVp018qaePiCoRkoFjLID9DR0Hog-YtBezDUHI/edit">Product / Customizer Details</a> sheet</td><td>Product and variant ID reference across markets</td><td>Shared</td></tr>
+</tbody>
+</table>
+</div>
+<p>The Sentry DSN is written into <code>vu_sentry.js</code> in plain sight. That is normal and safe for a browser SDK — it is ingest-only and cannot be used to read anything back.</p>
+
+<h2 id="settings">Configuration held outside git</h2>
+<p>Some runtime configuration lives only in Shopify. This is expected for product templates; it is a hazard for the Cascade engine settings.</p>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Configuration</th><th>Where</th><th>If a theme is published without it</th></tr></thead>
+<tbody>
+<tr><td><code>jtb_custom_helmet_src</code></td><td>Cascade theme settings</td><td><strong>Engine URL is empty — all five helmet customizers stop working.</strong></td></tr>
+<tr><td><code>jtb_custom_helmet_environment</code></td><td>Cascade theme settings</td><td>Blank <code>data-environment</code></td></tr>
+<tr><td><code>vu_customizer_environment</code>, <code>vu_customizer_country</code></td><td>Bauer theme settings</td><td>Falls back to schema defaults — wrong engine build or wrong market pricing</td></tr>
+<tr><td><code>klaviyo_account_id</code>, <code>klaviyo_list_id</code></td><td>Bauer theme settings</td><td>Share-by-email posts to the schema defaults</td></tr>
+<tr><td>Lead-time settings</td><td>Bauer theme settings</td><td>Schema default of 60 instead of the live 22</td></tr>
+<tr><td>Product templates and section placement</td><td>Shopify Theme Editor</td><td>Not in git by design — this is how Shopify works</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="intent">Deliberate decisions</h2>
+<p>Things that look like defects and are not. Change any of these only on purpose.</p>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Looks wrong</th><th>Reason</th><th>Ref</th></tr></thead>
+<tbody>
+<tr><td>Blocking Sentry script tags</td><td>Must initialise before the engine or its fetches are uninstrumented</td><td><a href="./sentry.html#order">Sentry</a></td></tr>
+<tr><td><code>customizer_values</code> is <code>let</code>, not on <code>window</code></td><td><code>vu_sentry.js</code> reads it as a bare identifier for tagging</td><td><a href="./bauer.html#boot">Bauer</a></td></tr>
+<tr><td>No <code>unhandledrejection</code> listener</td><td>SDK global handlers already capture them; a second double-reports</td><td><a href="./sentry.html#capture">Sentry</a></td></tr>
+<tr><td>Unreadable theme role → <code>production</code></td><td>Fail toward alerting rather than hiding real incidents</td><td><a href="./sentry.html#env">Sentry</a></td></tr>
+<tr><td>Two engine hosts on Cascade</td><td>Deliberate migration state — VU asked for the new URL and the override lets both run in parallel</td><td><a href="./cascade.html#hosts">Cascade</a></td></tr>
+<tr><td>Restore POC shipped but commented out</td><td>Enabling it forces every recipe to one hardcoded mock</td><td><a href="./restore.html">Restore</a></td></tr>
+<tr><td>Goalie code inside skate files</td><td>Paused 2025 work — resume there rather than starting fresh</td><td><a href="./roadmap.html#goalie">Upcoming</a></td></tr>
+<tr><td>Other Bauer shops missing JSON</td><td>Only CA was pulled into this repo</td><td><a href="./index.html#repo">Index</a></td></tr>
+<tr><td>Cascade dev shop spelled two ways</td><td>Long-standing typo; both resolve to the same store</td><td><a href="./cascade.html#stores">Cascade</a></td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="call care">
+  <span class="lab">VU's public docs do not describe our integration</span>
+  <p>VU Custom's <a href="https://vu-custom.gitbook.io/vu-custom/admin-api/integration/integrate-the-customizer-with-your-frontend">public embedding guide</a> documents a loader-script pattern against <code>silhouette.jtbcustom.com</code> with a <code>#jtbconfigurator</code> div. Neither Bauer nor Cascade uses that. Both were built directly with VU against a different contract. Treat the gitbook as background on VU OS concepts, not as a description of what is deployed here.</p>
+</div>
+
+<div class="pager">
+  <a href="./troubleshooting.html"><span class="dir">Previous</span><span class="ttl">&larr; Troubleshooting</span></a>
+  <a class="nx" href="./index.html"><span class="dir">Back to</span><span class="ttl">Index &rarr;</span></a>
+</div>
+
+<footer><p><a href="./index.html">VU Customizers</a> · Dependencies</p></footer>
+</main></div>
+<script src="./guide.js"></script>
+</body>
+</html>

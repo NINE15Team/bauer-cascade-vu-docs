@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Bauer — VU Customizers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<link rel="stylesheet" href="./guide.css">
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <a class="brand" href="./index.html"><span class="dot"></span><b>VU Customizers</b></a>
+  <button class="tbtn" id="tt" type="button">Dark</button>
+</div></header>
+<div class="wrap"><nav class="toc toc-d" aria-label="Contents">
+  <h2>On this page</h2>
+  <a href="#arch">Architecture</a>
+  <a href="#files">Files</a>
+  <a href="#boot">Boot sequence</a>
+  <a href="#config">Configuration layers</a>
+  <a href="#deps">External dependencies</a>
+  <a href="#issues">Known issues</a>
+</nav>
+<details class="toc toc-m"><summary>On this page</summary><div class="in">
+  <a href="#arch">Architecture</a>
+  <a href="#files">Files</a>
+  <a href="#boot">Boot sequence</a>
+  <a href="#config">Configuration layers</a>
+  <a href="#deps">External dependencies</a>
+  <a href="#issues">Known issues</a>
+</div></details>
+<main>
+
+<h1>Bauer</h1>
+<p class="lede">myBauer skate and steel customizer. Source: <code>sites/bauer-ca</code> + <code>sites/_shared</code>. Product templates and <code>settings_data.json</code> are Theme Editor–only.</p>
+
+<h2 id="arch">Architecture</h2>
+<p>Host + shell. Liquid mounts the DOM and config; VU's S3 bundle owns 3D, GLB/textures, recipe state, variant mapping and <code>POST /cart/add.js</code>. Theme JS is chrome only: modal, tabs, focus trap, price, lead-time line attributes, ATC failure toast.</p>
+
+<pre class="arch">[Customize CTA  name="showmodal"]
+        │
+        ▼
+openPopUpModal() → .loading-vu-modal
+        │
+        ▼
+Sentry.init (blocking) → S3 main.js injected from #customizer
+        │
+        ▼
+customizer.scene-rendered
+        │  open #vu_modal · wire tabs · compute lead time
+        │  → window.customizerLineAttributes
+        ▼
+#customizer-add-to-cart-button → VU's cart POST
+        │ fail
+        ▼
+customizer.add-to-cart-fail → toast + Sentry</pre>
+
+<div class="call rule">
+  <span class="lab">Cart ownership</span>
+  <p>The theme never calls <code>/cart/add.js</code>. It writes <code>window.customizerLineAttributes</code> on <code>scene-rendered</code> and VU's cart library reads that array. If line attributes are missing from an order, the usual cause is that the scene never fully rendered.</p>
+</div>
+
+<h2 id="files">Files</h2>
+<p>All under <code>sites/_shared/</code> unless noted. Sites inherit via the Dawn cartridge layout, so changes hit every Bauer market.</p>
+<div class="tablewrap">
+<table>
+<thead><tr><th>File</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td><code>sections/vu_customizer_section.liquid</code></td><td>The section added in the Theme Editor. Builds the S3 URL, passes all settings into the snippet.</td></tr>
+<tr><td><code>snippets/vu_customizer_snippet.liquid</code></td><td>The shell: Sentry config + tags, Alpine, modal markup, lead-time logic, Klaviyo share, <code>loadScript(main_source)</code>.</td></tr>
+<tr><td><code>assets/vu_main.js</code></td><td>Modal, tabs, focus trap, ATC loading state, recipe-driven info panels, 80s scene timeout. Loads no 3D.</td></tr>
+<tr><td><code>assets/vu_main.css</code></td><td>All customizer chrome. Contains the hardcoded Files URLs — see <a href="./dependencies.html#assets">Dependencies</a>.</td></tr>
+<tr><td><code>assets/vu_sentry.js</code></td><td><code>Sentry.init</code> + fetch wrap. ES5, no-ops safely if the CDN is blocked.</td></tr>
+<tr><td><code>assets/vu_customizer_restore_selections.js</code></td><td><a href="./restore.html">Restore POC</a>. Ships as an asset; loader is commented out.</td></tr>
+<tr><td><code>sections/rich-text.liquid</code></td><td>Block type <code>customizer</code> = “VU Customizer Trigger”. Attribute must be <code>showmodal</code>.</td></tr>
+<tr><td><code>sites/bauer-ca/sections/main-product.liquid</code></td><td>Legacy <code>vu_customizer</code> block. Broken — see <a href="#issues">below</a>.</td></tr>
+<tr><td><code>sites/bauer-ca/config/settings_schema.json</code></td><td>Theme settings: environment, country, lead times, Klaviyo.</td></tr>
+<tr><td><code>sites/bauer-ca/locales/en.default.json</code>, <code>fr.json</code></td><td><code>vu.vu-customizer.*</code>. Not in <code>_shared</code>.</td></tr>
+</tbody>
+</table>
+</div>
+<p class="small">Roughly thirty <code>snippets/vu-*.liquid</code> icon and guide partials: close, next/previous, arrows, reset, restart, print, share, download, add-to-cart, loading-gif, failed-loading, form-loading, divider, date, location, click_svg, pro-custom (+ card, icon), review-bottom-note, size/fit/flex/pattern guides, pattern-compare, fit-hide-icon. <code>vu-bauer.liquid</code> is an inline wordmark SVG.</p>
+
+<h2 id="boot">Boot sequence</h2>
+<ol class="steps">
+  <li><p><code>settings.vu_customizer_environment</code> is interpolated into <code>https://vu-customizer.s3.amazonaws.com/{env}/main.js</code>. Shop-wide; there is no per-section engine override.</p></li>
+  <li><p>Section settings supply <code>product</code> (VU slug) and <code>data_variant</code>. Neither is a Shopify handle. <code>data_variant</code> is downcased; <code>product</code> is not.</p></li>
+  <li><p><code>customizer_values = { product, country }</code> is declared with <code>let</code> in the snippet — deliberately not on <code>window</code>. <code>vu_sentry.js</code> reads it as a bare identifier. Moving it to <code>window</code> breaks region/product tagging.</p></li>
+  <li><p>Sentry CDN bundles + <code>vu_sentry.js</code> run <strong>blocking</strong>; <code>vu_main.js</code> is deferred; an inline script injects the S3 bundle during parse. <a href="./sentry.html#order">Why the order matters</a>.</p></li>
+  <li><p><code>#customizer</code> carries <code>data-environment</code>, <code>data-variant</code>, <code>data-variant-id</code>, <code>data-locale</code> and the debug flags. Locale is <code>en-us</code> on CA English, <code>fr-ca</code> when <code>request.locale.iso_code == 'fr'</code>.</p></li>
+  <li><p>On <code>customizer.scene-rendered</code>, lead time and SAP attributes are written to <code>window.customizerLineAttributes</code>.</p></li>
+</ol>
+
+<h2 id="config">Configuration layers</h2>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Layer</th><th>Location</th><th>Scope</th></tr></thead>
+<tbody>
+<tr><td>Theme settings</td><td>Theme Editor → Theme settings</td><td>Whole shop: environment, country, lead times, Klaviyo</td></tr>
+<tr><td>Section settings</td><td>Theme Editor → product template → VU Customizer</td><td>One placement: slug, data variant, feature toggles, custom-colour codes</td></tr>
+<tr><td>Product metafields</td><td>Admin → product → Metafields</td><td>One product: SAP category, customization level, delivery override</td></tr>
+</tbody>
+</table>
+</div>
+<p>The snippet reads exactly seven theme settings — everything else in the “myBauer Flags” group belongs to Spectrum-era pages:</p>
+<pre>settings.vu_customizer_environment
+settings.vu_customizer_country
+settings.custom_skate_estimated_delivery
+settings.custom_blade_estimated_delivery
+settings.custom_skate_customColor_estimated_delivery
+settings.klaviyo_account_id
+settings.klaviyo_list_id</pre>
+<p class="small">Notably absent: <code>custom_skate_retail_estimated_delivery</code>, all <code>custom_stick_*</code>, <code>custom_helmet_lead_time</code> and every <code>custom_*_host</code>. Full field reference in <a href="./operations-guide.html#theme">Operations</a>.</p>
+
+<h2 id="deps">External dependencies</h2>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Service</th><th>Owner</th><th>Used for</th></tr></thead>
+<tbody>
+<tr><td><code>vu-customizer.s3.amazonaws.com/{env}/main.js</code></td><td>VU Custom</td><td>Front-End Customizer engine</td></tr>
+<tr><td><code>vu-admin.s3.amazonaws.com</code></td><td>VU Custom</td><td>VU Admin assets</td></tr>
+<tr><td><code>s3.amazonaws.com/vu-os</code>, <code>vucustom.com</code></td><td>VU Custom</td><td>VU OS platform assets, templates, recipes</td></tr>
+<tr><td><code>browser.sentry-cdn.com/10.67.0/</code></td><td>Sentry</td><td>SDK + httpClient, SRI-pinned</td></tr>
+<tr><td>Sentry project <code>4511781528010752</code></td><td>PAA</td><td>Event ingest. DSN is public by design.</td></tr>
+<tr><td><code>cdn.jsdelivr.net</code> — Alpine 3.x + focus</td><td>Public CDN</td><td>Modal focus trap</td></tr>
+<tr><td><code>a.klaviyo.com/client/events</code>, <code>/subscriptions</code></td><td>Bauer Klaviyo</td><td>Share-progress email, list opt-in</td></tr>
+<tr><td>Shopify Files <code>1/0555/9818/6772</code></td><td>Bauer CA dev store</td><td>Customizer icons, Game Fit logo, pro-custom art</td></tr>
+<tr><td>Shopify Files <code>1/0555/9838/3422</code></td><td>Bauer CA dev store</td><td>One customizer icon; also site-wide fonts and imagery</td></tr>
+<tr><td><code>cdn.spectrumcustomizer.com</code>, hashed <code>main.*.js</code></td><td>Spectrum</td><td>Legacy sticks and goalie gear. Not VU.</td></tr>
+</tbody>
+</table>
+</div>
+
+
+
+<div class="pager">
+  <a href="./glossary.html"><span class="dir">Previous</span><span class="ttl">&larr; Terms</span></a>
+  <a class="nx" href="./operations-guide.html"><span class="dir">Next</span><span class="ttl">Operations &rarr;</span></a>
+</div>
+
+<footer><p><a href="./index.html">VU Customizers</a> · Bauer</p></footer>
+</main></div>
+<script src="./guide.js"></script>
+</body>
+</html>

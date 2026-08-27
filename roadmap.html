@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Upcoming projects — VU Customizers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<link rel="stylesheet" href="./guide.css">
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <a class="brand" href="./index.html"><span class="dot"></span><b>VU Customizers</b></a>
+  <button class="tbtn" id="tt" type="button">Dark</button>
+</div></header>
+<div class="wrap wide"><nav class="toc toc-d" aria-label="Contents">
+  <h2>On this page</h2>
+  <a href="#summary">Summary</a>
+  <a href="#goalie">Goalie gear</a>
+  <a class="sub" href="#goalie-state">Current state</a>
+  <a class="sub" href="#goalie-exists">What exists</a>
+  <a class="sub" href="#goalie-next">Next steps</a>
+  <a href="#sticks">Sticks</a>
+  <a href="#confusion">Two name traps</a>
+</nav>
+<details class="toc toc-m"><summary>On this page</summary><div class="in">
+  <a href="#summary">Summary</a>
+  <a href="#goalie">Goalie gear</a>
+  <a href="#sticks">Sticks</a>
+  <a href="#confusion">Two name traps</a>
+</div></details>
+<main>
+
+<h1>Upcoming projects</h1>
+<p class="lede">Current state, outstanding work and next steps for the two categories that are not live on VU: goalie gear and sticks.</p>
+
+<div class="gold" id="summary">
+  <p class="tag">Summary</p>
+  <p><strong>Goalie gear</strong> was started in 2025 and paused. A partial shell exists inside the skate files, so this is a resume, not a fresh build. It is blocked on VU-side configuration, not on theme work.</p>
+  <p><strong>Sticks</strong> were never started by Nine15. There is nothing to inherit — the stick code in the repo belongs to Spectrum, the previous vendor.</p>
+</div>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th></th><th>Goalie gear</th><th>Sticks</th></tr></thead>
+<tbody>
+<tr><td>Status</td><td>Paused mid-build (2025)</td><td>Never started</td></tr>
+<tr><td>Live today on</td><td>Spectrum (legacy vendor)</td><td>Spectrum (legacy vendor)</td></tr>
+<tr><td>Theme code exists?</td><td><strong>Yes</strong> — partial, in the skate files</td><td>No VU code. Legacy Spectrum pages only.</td></tr>
+<tr><td>VU <code>data_variant</code> issued?</td><td>No</td><td>No</td></tr>
+<tr><td>In the product spreadsheet?</td><td>No</td><td>No</td></tr>
+<tr><td>Blocked on</td><td>VU template configuration</td><td>Not scoped</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="goalie">Goalie gear</h2>
+<p><span class="pill pend">Started 2025 · paused</span></p>
+
+<h3 id="goalie-state">Current state</h3>
+<p>Pads, blockers and catchers were kicked off in 2025 and shelved before launch. Nobody has worked on it since. What shoppers see for that category today is still the <strong>Spectrum</strong> customizer, reached through <code>settings.custom_goalie_gear_host</code> (default <code>cdn.spectrumcustomizer.com</code>) and the <code>page.My-Bauer-Goalie-*</code> templates. None of that is VU and none of it is maintained as part of this integration.</p>
+
+<h3 id="goalie-exists">What already exists in the theme</h3>
+<p>This is the important part: <strong>do not start a new customizer.</strong> A partial shell is already committed inside the skate files and will be picked up automatically once VU issue the product configuration.</p>
+<div class="tablewrap">
+<table>
+<thead><tr><th>File</th><th>What is there</th></tr></thead>
+<tbody>
+<tr><td><code>sites/_shared/assets/vu_main.js</code> ~L1441</td><td>Accordion wiring for the <code>catcher_specs</code>, <code>pad_specs</code> and <code>blocker_specs</code> tab bodies</td></tr>
+<tr><td><code>sites/_shared/assets/vu_main.css</code></td><td>Styling for those tabs, plus <code>goalie_sam</code>, <code>goalie_win</code>, <code>goalie_ellipse</code>, <code>.goal-supreme-fuse-custom</code> and <code>.goal-vapor-flylite-custom</code></td></tr>
+<tr><td><code>sites/_shared/snippets/vu-icon-*.liquid</code></td><td>Icons already drawn for the category: <code>vu-icon-pads</code>, <code>vu-icon-blocker</code>, <code>vu-icon-catcher</code></td></tr>
+<tr><td><code>sites/_shared/snippets/vu_customizer_snippet.liquid</code></td><td>Stick and pattern modal triggers still wrapped in a “temporary code” comment — leftover from the same period</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 id="goalie-next">Outstanding work and next steps</h3>
+<ol class="steps">
+  <li><p><b class="st">VU configuration first</b>There is no <code>data_variant</code> and no product slug for gear. Until VU build the templates in VU Admin and issue those, no amount of theme work moves this forward. This is the gate.</p></li>
+  <li><p><b class="st">Confirm the tab structure</b>The existing accordion code assumes tabs named <code>catcher_specs</code>, <code>pad_specs</code> and <code>blocker_specs</code>. Check those names survived into VU's current template design before trusting the CSS.</p></li>
+  <li><p><b class="st">Agree the SAP mapping</b><code>custom.product_category</code> currently has Skate, Steel and Goalie Steel in use. Gear needs its own value agreed with whoever owns the SAP side, plus confirmation that <code>_Customization Level</code> stays <code>CUSTOM</code>.</p></li>
+  <li><p><b class="st">Decide the lead time</b>Gear is neither a skate nor a blade, so the existing two-branch logic does not cover it. Either add a branch on product type or set the <code>estimated_delivery</code> metafield per product.</p></li>
+  <li><p><b class="st">Finish the shell, then migrate off Spectrum</b>Complete the CSS and JS already in place, launch alongside Spectrum, then retire the <code>page.My-Bauer-Goalie-*</code> templates and <code>custom_goalie_gear_host</code>.</p></li>
+</ol>
+<div class="call care">
+  <span class="lab">Scope note</span>
+  <p>Goalie gear is a bigger customizer than a skate — three product families, each with their own spec panels. Treat the existing shell as a head start on layout, not as most of the work.</p>
+</div>
+
+<h2 id="sticks">Sticks</h2>
+<p><span class="pill pend">Never started</span></p>
+<p>A future Bauer project. Nine15 never worked on it and there is no VU stick integration in this repo to inherit or resume.</p>
+<p>What you will find in the code, and what it is <em>not</em>:</p>
+<div class="tablewrap">
+<table>
+<thead><tr><th>You will find</th><th>What it actually is</th></tr></thead>
+<tbody>
+<tr><td><code>custom_stick_*_lead_time</code>, <code>custom_stick_*_host</code>, <code>custom_stick_site_url</code></td><td>Spectrum-era theme settings. Not read by any VU code.</td></tr>
+<tr><td><code>page.My-Bauer-Sticks*</code> templates</td><td>Legacy Spectrum pages, still live.</td></tr>
+<tr><td><code>vu-flex-guide.liquid</code></td><td>A guide snippet that <strong>still contains lorem ipsum</strong>. Written speculatively, never finished, unreachable without a stick customizer.</td></tr>
+<tr><td><code>stick_flex_guide</code> metaobject (<code>stick-flex-guide</code>)</td><td>Exists in admin, renders nowhere on a live VU PDP.</td></tr>
+<tr><td>Pattern / flex modal triggers in the snippet</td><td>Commented out as “temporary code”.</td></tr>
+</tbody>
+</table>
+</div>
+<p>If sticks are picked up, the starting point is the same as any new category: VU build the templates and issue a <code>data_variant</code> and product slug, then follow <a href="./operations-guide.html#add">Add a product</a>. The flex guide snippet and metaobject are the only pre-existing scaffolding, and the snippet needs its placeholder copy replaced.</p>
+
+<h2 id="confusion">Two name traps</h2>
+<div class="call warn">
+  <span class="lab">Goalie steel is not goalie gear</span>
+  <p><strong>Goalie steel</strong> — LS Pulse Ti and LS 5G, <code>data_variant</code> <code>goalie-steel-b2c</code> — shipped, works, and is <a href="./operations-guide.html#steel">live today</a>. <strong>Goalie gear</strong> is pads, blockers and catchers, and is not built. The two sound identical in a meeting and are completely different states of done.</p>
+</div>
+<div class="call warn">
+  <span class="lab">Spectrum is not VU</span>
+  <p>Both categories still have working customizers on the site today, built by the <em>previous</em> vendor. Finding a live goalie or stick customizer is not evidence that VU work exists. Check which host the page loads.</p>
+</div>
+
+<div class="pager">
+  <a href="./cascade.html"><span class="dir">Previous</span><span class="ttl">&larr; Cascade</span></a>
+  <a class="nx" href="./troubleshooting.html"><span class="dir">Next</span><span class="ttl">Troubleshooting &rarr;</span></a>
+</div>
+
+<footer><p><a href="./index.html">VU Customizers</a> · Upcoming projects</p></footer>
+</main></div>
+<script src="./guide.js"></script>
+</body>
+</html>

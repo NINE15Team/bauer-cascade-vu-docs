@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Operations — VU Customizers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<link rel="stylesheet" href="./guide.css">
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <a class="brand" href="./index.html"><span class="dot"></span><b>VU Customizers</b></a>
+  <button class="tbtn" id="tt" type="button">Dark</button>
+</div></header>
+<div class="wrap wide"><nav class="toc toc-d" aria-label="Contents">
+  <h2>On this page</h2>
+  <a href="#add">Add a product</a>
+  <a href="#section">Section settings</a>
+  <a href="#theme">Theme settings</a>
+  <a href="#meta">Metafields</a>
+  <a href="#objects">Metaobjects</a>
+  <a href="#lead">Lead time and cart</a>
+  <a href="#cta">CTA and shared links</a>
+  <a href="#klaviyo">Klaviyo</a>
+  <a href="#locales">Locales</a>
+  <a href="#catalog">Live CA catalog</a>
+  <a class="sub" href="#skates">Skates</a>
+  <a class="sub" href="#steel">Steel</a>
+  <a href="#paused">Categories not on VU</a>
+  <a href="#sheet">Source of truth</a>
+</nav>
+<details class="toc toc-m"><summary>On this page</summary><div class="in">
+  <a href="#add">Add a product</a>
+  <a href="#section">Section settings</a>
+  <a href="#theme">Theme settings</a>
+  <a href="#meta">Metafields</a>
+  <a href="#objects">Metaobjects</a>
+  <a href="#lead">Lead time and cart</a>
+  <a href="#cta">CTA and shared links</a>
+  <a href="#klaviyo">Klaviyo</a>
+  <a href="#locales">Locales</a>
+  <a href="#catalog">Live CA catalog</a>
+  <a href="#paused">Categories not on VU</a>
+  <a href="#sheet">Source of truth</a>
+</div></details>
+<main>
+
+<h1>Operations</h1>
+<p class="lede">Standing up and maintaining VU products on Bauer CA. All values below are from live <strong>ca.bauer.com, 26 August 2026</strong> — not from git JSON and not from the spreadsheet.</p>
+
+<div class="gold">
+  <p class="tag">Prerequisite</p>
+  <p>VU must issue a <code>data_variant</code> and a product slug, and confirm which engine environment it is built on. Without those you have a PDP, not a customizer.</p>
+</div>
+
+<h2 id="add">Add a product</h2>
+<ol class="steps">
+  <li><p><b class="st">VU side</b>They configure the 3D product and return <code>data_variant</code> (e.g. <code>bauer-flylite</code>), <code>product</code> slug (e.g. <code>vapor</code>), and the ready environment — usually <code>staging</code> first.</p></li>
+  <li><p><b class="st">Shopify product</b>Create on Bauer store. Record product ID and variant IDs; steel has one variant per size. Set product type to <code>MyBauer-Skate</code> or <code>MyBauer-Steel</code> — the type drives lead-time selection.</p></li>
+  <li><p><b class="st">Template</b>Theme Editor → the product (or a dedicated product template) → add section <strong>VU Customizer</strong>. Not the <code>vu_customizer</code> block on main-product.</p></li>
+  <li><p><b class="st">Trigger</b>A control with <code>name="showmodal"</code> on the same document. The rich-text “VU Customizer Trigger” block does this when Attribute = <code>showmodal</code>.</p></li>
+  <li><p><b class="st">Metafields</b>Set <code>custom.product_category</code> and <code>custom.customization_type</code>. Leave <code>estimated_delivery</code> blank unless this product genuinely differs.</p></li>
+  <li><p><b class="st">Verify theme settings</b>Live CA: <code>vu_customizer_country = ca</code>, <code>vu_customizer_environment = production</code>.</p></li>
+  <li><p><b class="st">Smoke test on a draft theme</b>Open the modal, change a colour, reach the last tab, add to cart. Confirm the cart line carries estimated delivery, <code>_CustomerRequestDate</code>, <code>_LeadTime</code> and both SAP keys. Sentry environment should read <code>production-draft</code>.</p></li>
+  <li><p><b class="st">Record the IDs</b>Update the <a href="#sheet">spreadsheet</a> and the <a href="#catalog">catalog table</a> below.</p></li>
+</ol>
+
+<h2 id="section">Section settings</h2>
+<p>Schema on <code>vu_customizer_section.liquid</code>. Per-instance — products on the same theme can differ.</p>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Setting ID</th><th>Label</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td><code>image</code></td><td>Product logo</td><td>Shown top-left in the modal.</td></tr>
+<tr><td><code>product</code></td><td>Product</td><td>VU slug. <code>vapor</code>, <code>supreme</code>, <code>bauer-flylite</code>, <code>Pulse_ti_3mm</code>, <code>supreme-fuse</code>. <strong>Case-sensitive.</strong></td></tr>
+<tr><td><code>data_variant</code></td><td>Data Variant</td><td>VU model id. <code>bauer-shadow</code>, <code>steel-b2c</code>, <code>goalie-steel-b2c</code>, <code>supreme-fuse-b2c</code>. Downcased in Liquid.</td></tr>
+<tr><td><code>hide_price</code></td><td>Hide Price</td><td>B2B path — hides price, swaps ATC for “Send to Retailer”. False on all live CA products.</td></tr>
+<tr><td><code>data_debug</code></td><td>Data Debug</td><td>VU debug overlay. Off in production.</td></tr>
+<tr><td><code>data_show_hidden</code></td><td>Data Show Hidden</td><td>Reveals VU-hidden options. Off in production.</td></tr>
+<tr><td><code>procustom</code></td><td>Enable Pro Custom Widget</td><td>Renders <code>#pro-custom</code> + more-specs. Requires the pro-custom snippets and logos.</td></tr>
+<tr><td><code>bottom_note</code></td><td>Enable Bottom Note</td><td>Renders <code>#customizer-element-more_specs_2</code>.</td></tr>
+<tr><td><code>cta_scanner</code></td><td>Enable CTA Scanner</td><td>SizeRight QR at <code>#customizer-element-size_find_your_size</code>. Requires metaobject <code>size_qr.size-qr</code>. Off on all live CA products.</td></tr>
+<tr><td><code>delivery_custom_zone_codes</code></td><td>Custom Color Lead Time Codes</td><td>Comma-separated <code>recipe.color_zones.value.code</code> values. Blank = always default lead time. Blank on all live CA products.</td></tr>
+</tbody>
+</table>
+</div>
+<p>The engine URL is not a section setting. It is always <code>https://vu-customizer.s3.amazonaws.com/{{ settings.vu_customizer_environment }}/main.js</code>.</p>
+
+<h2 id="theme">Theme settings</h2>
+<div class="tablewrap">
+<table>
+<thead><tr><th>ID</th><th>Values</th><th>Live CA</th></tr></thead>
+<tbody>
+<tr><td><code>vu_customizer_environment</code></td><td><code>production</code> · <code>staging</code> · <code>qa</code> · <code>development</code></td><td><code>production</code></td></tr>
+<tr><td><code>vu_customizer_country</code></td><td><code>us</code> · <code>ca</code> · <code>se</code> · <code>fi</code> · <code>dk</code></td><td><code>ca</code></td></tr>
+<tr><td><code>custom_skate_estimated_delivery</code></td><td>Days</td><td>Renders <code>22</code></td></tr>
+<tr><td><code>custom_blade_estimated_delivery</code></td><td>Days, used when type is <code>MyBauer-Steel</code></td><td>Renders <code>22</code></td></tr>
+<tr><td><code>custom_skate_customColor_estimated_delivery</code></td><td>Days, used when a colour code matches the section list</td><td>Renders <code>36</code> (unreachable — code list is empty)</td></tr>
+<tr><td><code>klaviyo_account_id</code></td><td>Company ID</td><td>Schema default <code>VMYPPV</code></td></tr>
+<tr><td><code>klaviyo_list_id</code></td><td>Master list</td><td>Schema default <code>UpZA43</code></td></tr>
+</tbody>
+</table>
+</div>
+<p class="small">Schema lead-time defaults are 60; the live values above are what the PDPs actually render. Live <code>settings_data.json</code> is not committed, so confirm in the Theme Editor rather than trusting schema defaults.</p>
+
+
+<div class="call warn">
+  <span class="lab">Country is shop-wide</span>
+  <p>One value per theme, and VU derives pricing and option sets from it. CA must stay <code>ca</code>. Flipping it to test and forgetting to revert silently changes pricing on every customizer PDP.</p>
+</div>
+
+<h2 id="meta">Product metafields</h2>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Namespace.key</th><th>Live CA value</th><th>Cart key</th></tr></thead>
+<tbody>
+<tr><td><code>custom.product_category</code></td><td>Skates <code>Skate</code> · Fly-Ti/Fly-X <code>Steel</code> · Pulse/5G <code>Goalie Steel</code></td><td><code>_Custom Product Category</code></td></tr>
+<tr><td><code>custom.customization_type</code></td><td><code>CUSTOM</code> on every live VU product</td><td><code>_Customization Level</code></td></tr>
+<tr><td><code>estimated_delivery</code></td><td>Blank on every live VU PDP</td><td>Overrides lead-time days when set</td></tr>
+<tr><td>Product type <span class="small">(not a metafield)</span></td><td><code>MyBauer-Skate</code> · <code>MyBauer-Steel</code></td><td>Selects skate vs blade lead time</td></tr>
+</tbody>
+</table>
+</div>
+<div class="call rule">
+  <span class="lab">SAP keys</span>
+  <p>The underscore prefix keeps <code>_Custom Product Category</code>, <code>_Customization Level</code>, <code>_CustomerRequestDate</code> and <code>_LeadTime</code> off the storefront line item. The spelling is an SAP contract — renaming one produces a successful order with bad manufacturing data.</p>
+</div>
+
+<h2 id="objects">Metaobjects</h2>
+<p>Edited in Admin → Content → Metaobjects. Handles are hardcoded in Liquid. Confirmed rendering on live CA PDPs.</p>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Type</th><th>Handle</th><th>Snippet</th><th>Live?</th></tr></thead>
+<tbody>
+<tr><td><code>size_guide</code></td><td><code>skate-size-guide</code></td><td><code>vu-size-guide</code></td><td>Yes</td></tr>
+<tr><td><code>fit_guide</code></td><td><code>fit-guide-skate</code></td><td><code>vu-fit-guide</code></td><td>Yes</td></tr>
+<tr><td><code>blade_pattern_guide</code></td><td><code>blade-pattern-guide</code></td><td><code>vu-pattern-guide</code></td><td>Yes</td></tr>
+<tr><td><code>stick_flex_guide</code></td><td><code>stick-flex-guide</code></td><td><code>vu-flex-guide</code></td><td>Markup only; no live stick customizer</td></tr>
+<tr><td><code>size_qr</code></td><td><code>size-qr</code></td><td>QR in snippet</td><td>No — <code>cta_scanner</code> is off</td></tr>
+</tbody>
+</table>
+</div>
+<p class="small">A second handle <code>fit-guide-tnikgzxx</code> appears in <code>vu-fit-guide.liquid</code> but is inside a <code>{% comment %}</code> block. Dead reference — ignore it. Fit images are on CA production Files (<code>1/0658/4749/2861</code>); the Game Fit logo is not — see <a href="./dependencies.html#assets">Dependencies</a>.</p>
+
+<h2 id="lead">Lead time and cart attributes</h2>
+<p>On <code>customizer.scene-rendered</code> the snippet builds <code>window.customizerLineAttributes</code>:</p>
+<ol>
+<li>Translated estimated delivery date → <code>MM/DD/YYYY</code>, weekdays only</li>
+<li><code>_CustomerRequestDate</code> — same date</li>
+<li><code>_LeadTime</code> — integer days</li>
+<li><code>_Custom Product Category</code> — if the metafield is set</li>
+<li><code>_Customization Level</code> — if the metafield is set</li>
+</ol>
+<pre class="arch">days = product.metafields.estimated_delivery
+     ?? (product.type == 'MyBauer-Steel'
+           ? custom_blade_estimated_delivery
+           : custom_skate_estimated_delivery)
+
+on customizer.recipe-updates-complete:
+  if recipe.color_zones.value.code ∈ section.delivery_custom_zone_codes
+     days = custom_skate_customColor_estimated_delivery
+     → re-render date + #expectedDelivery</pre>
+
+<h2 id="cta">CTA and shared links</h2>
+<p><code>vu_main.js</code> binds every <code>[name="showmodal"]</code> to <code>openPopUpModal</code>. The section can sit hidden on the product template while the trigger lives in a hero elsewhere on the same document.</p>
+<p><code>?recipe_id=</code> on the URL auto-opens the modal and loads that recipe, then strips <code>recipe_id</code> and <code>variant</code> from the address bar. Print is <code>customizer.printSummary()</code> from <code>#printButton</code>.</p>
+
+<h2 id="klaviyo">Klaviyo</h2>
+<p>Closing the modal with unsaved progress, or using Share, posts to:</p>
+<pre>https://a.klaviyo.com/client/events/?company_id={{ settings.klaviyo_account_id }}
+https://a.klaviyo.com/client/subscriptions/?company_id=… + list {{ settings.klaviyo_list_id }}</pre>
+<p>Payload includes recipe fields (colour, sizes, tongue, fit) and a resume URL with <code>?recipe_id=</code>. This is Bauer's Klaviyo account. Live IDs are in Theme settings, not git.</p>
+<p class="small">Success and failure toasts use the missing <code>email_success</code> / <code>email_fail</code> keys — see below.</p>
+
+<h2 id="locales">Locales</h2>
+<p>Namespace <code>vu.vu-customizer.*</code> in <code>sites/bauer-ca/locales/</code>, not <code>_shared</code>. French PDPs set <code>data-locale="fr-ca"</code>; VU must have that locale built.</p>
+<div class="call warn">
+  <span class="lab">Four keys referenced but undefined</span>
+  <p><code>load_fail</code>, <code>try_again</code>, <code>email_success</code>, <code>email_fail</code> are called by the snippet and absent from both <code>en.default.json</code> and <code>fr.json</code>. Shopify renders the key path instead, including inside the load-failure UI. Verified August 2026.</p>
+</div>
+
+<h2 id="catalog">Live CA catalog</h2>
+<p>Audited 26 August 2026. All: <code>data-environment="production"</code>, country <code>ca</code>, locale <code>en-us</code> on English PDPs, <code>hide_price=false</code>, <code>CUSTOM</code>, lead time 22. Variant IDs are the PDP default; steel has more sizes in admin.</p>
+
+<h3 id="skates">Skates <span class="small">— type <code>MyBauer-Skate</code>, SAP <code>Skate</code></span></h3>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Title</th><th>Handle</th><th>Product ID</th><th>Variant</th><th>data_variant</th><th>product</th></tr></thead>
+<tbody>
+<tr><td>Supreme Shadow</td><td><a href="https://ca.bauer.com/products/mybauer-custom-skate-supreme-shadow">mybauer-custom-skate-supreme-shadow</a></td><td>8400843014397</td><td>44869405606141</td><td><code>bauer-shadow</code></td><td><code>supreme</code></td></tr>
+<tr><td>FlyLite</td><td><a href="https://ca.bauer.com/products/mybauer-flylite-skate-custom">mybauer-flylite-skate-custom</a></td><td>8869087215869</td><td>46212339106045</td><td><code>bauer-flylite</code></td><td><code>bauer-flylite</code></td></tr>
+<tr><td>Supreme Fuse</td><td><a href="https://ca.bauer.com/products/mybauer-fuse-skate-custom">mybauer-fuse-skate-custom</a></td><td>9130059497725</td><td>47179425743101</td><td><code>supreme-fuse-b2c</code></td><td><code>supreme-fuse</code></td></tr>
+</tbody>
+</table>
+</div>
+<div class="call warn">
+  <span class="lab">Hyperlite 2 is not live</span>
+  <p><code>/products/mybauer-custom-skate-vapor-hyperlite-2</code> is 404. Product ID <code>8400842948861</code> from the sheet is not a published VU skate on CA — search returns only legacy Spectrum Hyperlite pages. Do not document that handle as production.</p>
+</div>
+
+<h3 id="steel">Steel and goalie steel <span class="small">— type <code>MyBauer-Steel</code></span></h3>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Title</th><th>Handle</th><th>Product ID</th><th>Variant</th><th>data_variant</th><th>product</th><th>SAP</th></tr></thead>
+<tbody>
+<tr><td>Fly-Ti Runner</td><td><a href="https://ca.bauer.com/products/mybauer-fly-ti-runner">mybauer-fly-ti-runner</a></td><td>8095626068221</td><td>43951905046781</td><td><code>steel-b2c</code></td><td><code>fly_ti</code></td><td>Steel</td></tr>
+<tr><td>Fly-X Runner</td><td><a href="https://ca.bauer.com/products/mybauer-fly-x-runner">mybauer-fly-x-runner</a></td><td>8095626100989</td><td>43951905079549</td><td><code>steel-b2c</code></td><td><code>fly_x</code></td><td>Steel</td></tr>
+<tr><td>LS Pulse Ti Goalie</td><td><a href="https://ca.bauer.com/products/mybauer-ls-pulse-ti-goalie">mybauer-ls-pulse-ti-goalie</a></td><td>8900176216317</td><td>46329882509565</td><td><code>goalie-steel-b2c</code></td><td><code>Pulse_ti_3mm</code></td><td>Goalie Steel</td></tr>
+<tr><td>LS 5G Goalie</td><td><a href="https://ca.bauer.com/products/mybauer-ls-5g-goalie">mybauer-ls-5g-goalie</a></td><td>8900176249085</td><td>46329883558141</td><td><code>goalie-steel-b2c</code></td><td><code>ls5g_3mm</code></td><td>Goalie Steel</td></tr>
+</tbody>
+</table>
+</div>
+<p class="small"><code>bauer-fly-x-runner</code> and <code>bauer-fly-ti-runner</code> (no <code>mybauer-</code> prefix) are retail steel SKUs with no VU script.</p>
+
+<h2 id="paused">Categories not on VU</h2>
+<p>Goalie gear and sticks are not live on VU. Their current state, the partial shell already in the skate files, and the next steps for each are on <a href="./roadmap.html">Upcoming projects</a>.</p>
+<div class="call warn">
+  <span class="lab">Goalie steel is not goalie gear</span>
+  <p>Goalie <em>steel</em> — LS Pulse Ti and LS 5G, listed <a href="#steel">above</a> — shipped and is live. Goalie <em>gear</em> is pads, blockers and catchers, and is not built.</p>
+</div>
+
+<h2 id="sheet">Source of truth</h2>
+<p><a href="https://docs.google.com/spreadsheets/d/1e-8J2PVp018qaePiCoRkoFjLID9DR0Hog-YtBezDUHI/edit?gid=0#gid=0">Product / Customizer Details</a> (Google Sheet) holds IDs, data variants, slugs, environments and preview URLs.</p>
+<p>Where the sheet and this page disagree, <strong>believe the live PDP</strong>. Known sheet errors: Fuse carries Hyperlite 2's product ID; the Hyperlite 2 custom URL is 404; steel URLs are marked NA but exist. Other markets: use the sheet — their JSON is not in this repo.</p>
+
+<div class="pager">
+  <a href="./bauer.html"><span class="dir">Previous</span><span class="ttl">&larr; Bauer</span></a>
+  <a class="nx" href="./sentry.html"><span class="dir">Next</span><span class="ttl">Sentry &rarr;</span></a>
+</div>
+
+<footer><p><a href="./bauer.html">Bauer</a> · Operations</p></footer>
+</main></div>
+<script src="./guide.js"></script>
+</body>
+</html>

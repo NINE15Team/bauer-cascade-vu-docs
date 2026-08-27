@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Troubleshooting — VU Customizers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<link rel="stylesheet" href="./guide.css">
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <a class="brand" href="./index.html"><span class="dot"></span><b>VU Customizers</b></a>
+  <button class="tbtn" id="tt" type="button">Dark</button>
+</div></header>
+<div class="wrap wide"><nav class="toc toc-d" aria-label="Contents">
+  <h2>On this page</h2>
+  <a href="#triage">Triage</a>
+  <a href="#open">Modal won't open</a>
+  <a href="#render">Renders wrong</a>
+  <a href="#cart">Cart</a>
+  <a href="#sentry">Sentry</a>
+  <a href="#cascade">Cascade only</a>
+  <a href="#vendor">Vendor escalation</a>
+</nav>
+<details class="toc toc-m"><summary>On this page</summary><div class="in">
+  <a href="#triage">Triage</a>
+  <a href="#open">Modal won't open</a>
+  <a href="#render">Renders wrong</a>
+  <a href="#cart">Cart</a>
+  <a href="#sentry">Sentry</a>
+  <a href="#cascade">Cascade only</a>
+  <a href="#vendor">Vendor escalation</a>
+</div></details>
+<main>
+
+<h1>Troubleshooting</h1>
+<p class="lede">Symptom → cause → fix, both brands.</p>
+
+<div class="gold" id="triage">
+  <p class="tag">Triage first</p>
+  <p>DevTools → Network. Did <code>main.js</code> load from the VU host, and what status? Everything downstream depends on that answer, and it separates a settings bug from a vendor outage in about ten seconds.</p>
+</div>
+
+<h2 id="open">Modal will not open</h2>
+
+<details class="q">
+<summary>Clicking Customize does nothing</summary>
+<div class="body">
+<h4>Causes, in order of likelihood</h4>
+<ol>
+<li><strong>Trigger attribute wrong.</strong> <code>vu_main.js</code> binds only <code>[name="showmodal"]</code>. The rich-text trigger block's Attribute field must be exactly that.</li>
+<li><strong>Section not on the document.</strong> Trigger and section must be on the same page. A hero button on a landing page needs the section there too.</li>
+<li><strong>Legacy block used.</strong> The <code>vu_customizer</code> block in <code>main-product.liquid</code> renders the snippet with no <code>main_source</code>, <code>_product</code> or <code>variant</code> — a dead shell. Use the <strong>VU Customizer section</strong>.</li>
+</ol>
+<h4>Confirm</h4>
+<pre>document.querySelectorAll('[name="showmodal"]').length
+document.getElementById('customizer')?.src</pre>
+<p>No trigger → cause 1. No <code>#customizer</code> or empty <code>src</code> → cause 2 or 3.</p>
+</div>
+</details>
+
+<details class="q">
+<summary>Loading state hangs, then the failure UI appears</summary>
+<div class="body">
+<h4>Cause</h4>
+<p>Either <code>main.js</code> never loaded, or it loaded and the scene never rendered. <code>vu_main.js</code> gives up at 80s and shows the failed-loading UI.</p>
+<h4>Confirm</h4>
+<p>Network tab, filter <code>main.js</code>:</p>
+<ul>
+<li><strong>404</strong> — bad URL. Almost always <code>vu_customizer_environment</code> pointing at a folder that does not exist.</li>
+<li><strong>403</strong> — VU-side permissions.</li>
+<li><strong>200 but no scene</strong> — the engine stalled on a GLB, texture or recipe fetch. Look for other failures on VU hosts.</li>
+</ul>
+<h4>Fix</h4>
+<p>404: correct the theme setting (<code>production</code> on live). Otherwise collect the failing URLs and <a href="#vendor">escalate</a>.</p>
+<p class="small">Sentry will already have <code>VU main.js failed to load</code> or <code>VU scene render timeout (80s)</code>.</p>
+</div>
+</details>
+
+<details class="q">
+<summary>Broke immediately after a theme publish</summary>
+<div class="body">
+<h4>Cascade — most likely cause</h4>
+<p><code>jtb_custom_helmet_src</code> and <code>jtb_custom_helmet_environment</code> are not in the repo. A theme published from git has them blank, so <code>src</code> is empty and all five helmets die at once.</p>
+<pre>document.querySelector('#customizer').src   // empty → this is it</pre>
+<p><strong>Fix:</strong> restore both values in Theme settings (search “JTB” / “custom helmet”), or roll back the theme. <a href="./cascade.html#resolve">Detail.</a></p>
+<h4>Bauer</h4>
+<p>Check <code>vu_customizer_environment</code> and <code>vu_customizer_country</code> survived. Also note publishing flips Sentry from <code>production-draft</code> to <code>production</code> — alerts that were quiet during testing now fire for real.</p>
+</div>
+</details>
+
+<h2 id="render">Opens but renders wrong</h2>
+
+<details class="q">
+<summary>Icons missing — restart, bag, chevrons, QR, Game Fit logo</summary>
+<div class="body">
+<h4>Cause</h4>
+<p>Those assets are hardcoded to Shopify Files on client <strong>dev</strong> stores (<code>1/0555/9818/6772</code> = <code>bauer-ca-dev</code>, and <code>1/0555/9838/3422</code>). If a dev store is paused, archived, or its Files cleaned out, live PDPs lose them.</p>
+<h4>Confirm</h4>
+<p>Network tab, failed requests containing <code>0555/9818/6772</code> or <code>0555/9838/3422</code>.</p>
+<h4>Fix</h4>
+<p>Re-upload to the production shop or theme assets and update the URLs. File list: <a href="./dependencies.html#assets">Dependencies</a>.</p>
+</div>
+</details>
+
+<details class="q">
+<summary>Raw <code>translation missing: en.vu.vu-customizer.…</code> on screen</summary>
+<div class="body">
+<h4>Cause</h4>
+<p>Four keys are referenced by the snippet and absent from both CA locale files: <code>load_fail</code>, <code>try_again</code>, <code>email_success</code>, <code>email_fail</code>. The first two appear inside the load-failure UI, so the error message is itself broken.</p>
+<h4>Fix</h4>
+<p>Add all four under <code>vu.vu-customizer</code> in <code>sites/bauer-ca/locales/en.default.json</code> and <code>fr.json</code>.</p>
+</div>
+</details>
+
+<details class="q">
+<summary>Wrong delivery date</summary>
+<div class="body">
+<h4>Resolution order — first match wins</h4>
+<ol>
+<li><code>estimated_delivery</code> metafield on the product. Should be blank on all live products; a stray value here is the most common cause.</li>
+<li><code>product.type == 'MyBauer-Steel'</code> → blade lead time, else skate lead time. A mistyped product type sends it down the wrong branch.</li>
+<li>Custom-colour swap: only if the recipe's <code>color_zones</code> code is in the section's list. That list is empty on every live CA product, so this branch should be unreachable.</li>
+<li>Theme settings — live CA renders 22 / 36.</li>
+</ol>
+<p class="small">The date counts weekdays only, so it will not match a naïve today+N. That is correct.</p>
+<p><a href="./operations-guide.html#lead">Full logic.</a></p>
+</div>
+</details>
+
+<details class="q">
+<summary>A colour, size or option is missing</summary>
+<div class="body">
+<h4>Not a theme issue</h4>
+<p>Option sets are VU-side configuration keyed on product slug and country.</p>
+<h4>Check before escalating</h4>
+<ul>
+<li><code>vu_customizer_country</code> — VU derives pricing and option sets from it. A test change left un-reverted alters an entire market.</li>
+<li><code>vu_customizer_environment</code> — staging builds can carry different option sets.</li>
+</ul>
+<p>Then send VU the slug, data variant, country and what is missing.</p>
+</div>
+</details>
+
+<h2 id="cart">Cart</h2>
+
+<details class="q">
+<summary>Add to cart fails after the shopper finishes</summary>
+<div class="body">
+<h4>Priority</h4>
+<p>Highest — the design is complete and unpurchasable. Sentry tags it <code>vu_error_type: add_to_cart</code> and fires alert rule 17327463.</p>
+<h4>Cause</h4>
+<p>VU's cart library performs the POST, not the theme. On failure it emits <code>customizer.add-to-cart-fail</code>; we toast and capture.</p>
+<h4>Confirm</h4>
+<p>Network tab → <code>/cart/add</code> → read the response body. Common: variant out of stock or unpublished, wrong <code>data-variant-id</code> on the tag, or a VU-side cart failure.</p>
+<h4>Fix</h4>
+<p>Verify the variant is published and in stock first — that is the theme-fixable half. Otherwise escalate with the response body.</p>
+</div>
+</details>
+
+<details class="q">
+<summary>Cart line missing delivery date or SAP attributes</summary>
+<div class="body">
+<h4>Cause</h4>
+<p><code>window.customizerLineAttributes</code> is written on <code>scene-rendered</code>. If the scene never fully rendered, the array was never populated — but the shopper may still have added to cart.</p>
+<h4>Check</h4>
+<ol>
+<li>Did the scene complete? A partially loaded customizer can still ATC without attributes.</li>
+<li>Are <code>custom.product_category</code> and <code>custom.customization_type</code> set? Those two attributes are conditional on the metafields existing.</li>
+<li>Has an underscore key been renamed? Spelling is an SAP contract.</li>
+</ol>
+<p><strong>Why it matters:</strong> the order succeeds and reaches manufacturing with missing data — worse than a visible failure, because nothing surfaces until production.</p>
+</div>
+</details>
+
+<details class="q">
+<summary>Cart thumbnails broken (Cascade)</summary>
+<div class="body">
+<p>Thumbnails come from <code>silhouette3.jtbcustom.com</code> — VU's recipe image API, not Shopify. A 403 or timeout is a vendor issue.</p>
+<p>If it is <em>only</em> Z and SL: those are the two already migrated to VU's new engine URL, and the “Override VU Src Thumbnail” metafield that appears intended to repoint their thumbnail host was never wired into Liquid. <a href="./cascade.html#cart">Detail.</a></p>
+</div>
+</details>
+
+<h2 id="sentry">Sentry</h2>
+
+<details class="q">
+<summary>Reading an alert</summary>
+<div class="body">
+<h4>1 · environment</h4>
+<ul>
+<li><code>production</code> — real shoppers, act.</li>
+<li><code>production-draft</code> — someone on a preview theme. Informational.</li>
+<li><code>staging</code> — dev shop. Ignore, and fix the rule that sent it.</li>
+</ul>
+<h4>2 · <code>vu_error_type</code></h4>
+<ul>
+<li><code>add_to_cart</code> — highest severity.</li>
+<li><code>asset_load</code> — check whether it is one <code>data_variant</code> or all of them.</li>
+<li><code>scene_timeout</code> — often a slow client; a burst means something real.</li>
+</ul>
+<h4>3 · scope</h4>
+<p><code>product</code>, <code>data_variant</code> and <code>region</code> tell you single-product vs site-wide. Most of the response plan follows from that.</p>
+</div>
+</details>
+
+<details class="q">
+<summary>Sentry has gone silent</summary>
+<div class="body">
+<h4>Causes</h4>
+<ol>
+<li><strong><code>defer</code> or <code>async</code> added to the Sentry tags.</strong> The classic. Looks like a perf win, disables instrumentation entirely.</li>
+<li><strong>CDN version bumped without updating SRI.</strong> Fails closed, silently.</li>
+<li><strong>Ad blocker on your own browser.</strong> By design.</li>
+</ol>
+<h4>Confirm</h4>
+<pre>VuSentry.enabled   // false with no blocker running = problem</pre>
+<h4>Also legitimate</h4>
+<p>The new-issue rule can be correctly silent: issues group across environments, so anything first seen in <code>production-draft</code> is not “new” in production. <a href="./sentry.html#alerts">Detail.</a></p>
+</div>
+</details>
+
+<details class="q">
+<summary>Too much noise in the project</summary>
+<div class="body">
+<p>Filter on <code>vu_related:true</code> rather than lowering <code>sampleRate</code>. If genuinely irrelevant errors are still arriving, extend <code>ignoreErrors</code> or <code>denyUrls</code> in <code>vu_sentry.js</code> — <a href="./sentry.html#filters">current lists</a>.</p>
+</div>
+</details>
+
+<h2 id="cascade">Cascade only</h2>
+
+<details class="q">
+<summary>Dev PDP appears to have no customizer</summary>
+<div class="body">
+<p>You fetched the password page. Use admin → <em>View on Online Store</em>, or the theme editor preview.</p>
+</div>
+</details>
+
+<details class="q">
+<summary>Z and SL behave differently from the other three</summary>
+<div class="body">
+<p>Expected. VU asked us to move to a new engine URL, and the override metafield lets both versions run in parallel during the switch. Z and SL are migrated; XRS Pro, XRS Youth and CPV-R are still on the legacy bucket.</p>
+<p>So the split is a migration state, not a fault. Do not cut the remaining three over unilaterally — sequence it with VU — and never point any Cascade PDP at Bauer's host. <a href="./cascade.html#hosts">Detail.</a></p>
+</div>
+</details>
+
+<details class="q">
+<summary>A helmet reports production but behaves like staging</summary>
+<div class="body">
+<p><code>override_vu_src</code> and <code>override_vu_environment</code> are independent, so the engine URL and the environment label can disagree with nothing warning you. Check both — the URL is authoritative, the label is cosmetic.</p>
+<pre>document.querySelector('#customizer').src
+document.querySelector('#customizer').dataset.environment</pre>
+</div>
+</details>
+
+<h2 id="vendor">Vendor escalation</h2>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Symptom</th><th>Owner</th></tr></thead>
+<tbody>
+<tr><td><code>main.js</code> 403</td><td><strong>VU</strong> — S3 permissions</td></tr>
+<tr><td><code>main.js</code> 404</td><td><strong>Theme</strong> — wrong environment setting</td></tr>
+<tr><td>GLB / texture / recipe fetch failure</td><td><strong>VU</strong></td></tr>
+<tr><td>Missing option, colour or size</td><td><strong>VU</strong> — product configuration</td></tr>
+<tr><td>Sudden CORS burst, no theme change</td><td><strong>VU</strong> — has happened before (2026-07-24)</td></tr>
+<tr><td>Cart thumbnail 403</td><td><strong>VU</strong> — recipe image API</td></tr>
+<tr><td>Wrong lead time / date</td><td><strong>Theme</strong> — settings or metafields</td></tr>
+<tr><td>Missing icons, untranslated strings</td><td><strong>Theme</strong></td></tr>
+<tr><td>Add-to-cart failure</td><td><strong>Either</strong> — check variant stock/publish state first</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="vendor-what">What to include</h3>
+<ul>
+<li>PDP URL, product slug, <code>data_variant</code></li>
+<li>Resolved <code>#customizer[src]</code> and <code>data-environment</code></li>
+<li>Country and locale</li>
+<li>Failing request URLs with status codes</li>
+<li>Onset time, and whether a theme was published near it</li>
+</ul>
+<p>For Bauer most of this is already on the Sentry issue as tags. <strong>#bauer-vu-nine15</strong> is shared with VU and is usually the fastest route.</p>
+
+<div class="pager">
+  <a href="./roadmap.html"><span class="dir">Previous</span><span class="ttl">&larr; Upcoming projects</span></a>
+  <a class="nx" href="./dependencies.html"><span class="dir">Next</span><span class="ttl">Dependencies &rarr;</span></a>
+</div>
+
+<footer><p><a href="./index.html">VU Customizers</a> · Troubleshooting</p></footer>
+</main></div>
+<script src="./guide.js"></script>
+</body>
+</html>

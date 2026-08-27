@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>VU Customizers — knowledge transfer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<link rel="stylesheet" href="./guide.css">
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <a class="brand" href="./index.html"><span class="dot"></span><b>VU Customizers</b></a>
+  <button class="tbtn" id="tt" type="button">Dark</button>
+</div></header>
+<div class="wrap solo">
+<main>
+
+<h1>VU Customizers</h1>
+<p class="lede">Maintenance documentation for the VU Custom 3D customizers on Peak Achievement Athletics: myBauer skates and steel, and Cascade Maverik helmets.</p>
+
+<div class="gold">
+  <p class="tag">Division of responsibility</p>
+  <p>VU's <code>main.js</code> — hosted on their S3 — owns the 3D scene, recipe state, option sets, variant mapping, and the <code>POST /cart/add.js</code>. The theme owns the trigger, the modal, tabs, price, lead-time calculation, cart line attributes, and error tracking.</p>
+  <span class="ask">We cannot change the engine. Most 3D-level bugs are a vendor ticket, not a theme fix.</span>
+</div>
+
+<h2 id="state">Status</h2>
+<div class="statrow">
+  <div class="stat"><b>Live</b><span>Bauer: 3 skates, 4 steel runners (CA)</span></div>
+  <div class="stat"><b>Live</b><span>Cascade: 5 helmets</span></div>
+  <div class="stat"><b>Paused</b><span>Bauer goalie gear — partial shell, 2025</span></div>
+  <div class="stat"><b>Off</b><span>Restore selections POC (commented out)</span></div>
+  <div class="stat"><b>Debt</b><span>Prod assets served from dev-store Files</span></div>
+</div>
+
+<h2 id="brands">The two integrations</h2>
+<p>Same vendor, unrelated implementations. Different engine hosts, different shell code, different theme contract. Nothing learned on one transfers cleanly to the other except the vendor relationship.</p>
+
+<div class="cards">
+  <a class="card" href="./bauer.html">
+    <p class="who"><code>sites/bauer-ca</code> + <code>sites/_shared</code></p>
+    <h3>Bauer</h3>
+    <p>Section + snippet + separate JS/CSS. Sentry instrumented. Lead times and SAP cart attributes.</p>
+    <ul>
+      <li>Engine: <code>vu-customizer.s3.amazonaws.com/{env}/main.js</code></li>
+      <li>One engine host, set shop-wide</li>
+    </ul>
+    <span class="go">Bauer &rarr;</span>
+  </a>
+  <a class="card" href="./cascade.html">
+    <p class="who"><code>sites/cascade-maverik</code></p>
+    <h3>Cascade</h3>
+    <p>Everything in one 3,226-line snippet. No error tracking. Per-product engine overrides.</p>
+    <ul>
+      <li>Mid-migration: two engine hosts running in parallel</li>
+      <li>Two required theme settings are not in git</li>
+    </ul>
+    <span class="go">Cascade &rarr;</span>
+  </a>
+</div>
+
+<h2 id="pages">Pages</h2>
+<ul class="router">
+  <li><a href="./glossary.html"><span class="qq">Project terms — <code>data_variant</code> vs product slug, recipe, elements, the two meanings of “environment”</span><span class="aa">Terms</span></a></li>
+  <li><a href="./bauer.html"><span class="qq">Bauer architecture, files, boot order, dependencies</span><span class="aa">Bauer</span></a></li>
+  <li><a href="./operations-guide.html"><span class="qq">Adding a product, every setting, metafields, live catalog IDs</span><span class="aa">Operations</span></a></li>
+  <li><a href="./sentry.html"><span class="qq">Error tracking: load order, tags, environments, alert rules</span><span class="aa">Sentry</span></a></li>
+  <li><a href="./restore.html"><span class="qq">Restore-selections POC and the VU element API</span><span class="aa">Restore</span></a></li>
+  <li><a href="./cascade.html"><span class="qq">Cascade helmets, engine hosts, overrides, catalog</span><span class="aa">Cascade</span></a></li>
+  <li><a href="./troubleshooting.html"><span class="qq">Symptom → cause → fix, both brands</span><span class="aa">Troubleshooting</span></a></li>
+  <li><a href="./roadmap.html"><span class="qq">Goalie gear and sticks — state, outstanding work, next steps</span><span class="aa">Upcoming</span></a></li>
+  <li><a href="./dependencies.html"><span class="qq">External services, assets, accounts, and who controls each</span><span class="aa">Dependencies</span></a></li>
+</ul>
+
+<h2 id="repo">Repo scope</h2>
+<div class="call care">
+  <span class="lab">Two things that will waste your time otherwise</span>
+  <p><strong>Product templates and <code>settings_data.json</code> are not in git.</strong> Shopify keeps them in the Theme Editor. There is no <code>{% render %}</code> or section reference in the repo tying a customizer to a product — that binding is admin-side. The snippet <em>is</em> on the live PDPs.</p>
+  <p><strong>Only Bauer CA was pulled.</strong> Other Bauer shops in this monorepo share <code>_shared</code> Liquid but their JSON and schema were never synced. Missing files there are expected.</p>
+</div>
+
+<div class="pager">
+  <span></span>
+  <a class="nx" href="./glossary.html"><span class="dir">Next</span><span class="ttl">Terms &rarr;</span></a>
+</div>
+
+<footer><p>Peak Achievement Athletics · VU Custom integration · Nine15, August 2026</p></footer>
+</main></div>
+<script src="./guide.js"></script>
+</body>
+</html>

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Cascade — VU Customizers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<link rel="stylesheet" href="./guide.css">
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <a class="brand" href="./index.html"><span class="dot"></span><b>VU Customizers</b></a>
+  <button class="tbtn" id="tt" type="button">Dark</button>
+</div></header>
+<div class="wrap wide"><nav class="toc toc-d" aria-label="Contents">
+  <h2>On this page</h2>
+  <a href="#hosts">Engine hosts</a>
+  <a href="#stores">Stores</a>
+  <a href="#resolve">URL resolution</a>
+  <a href="#live">Live helmets</a>
+  <a href="#dev">Dev catalog</a>
+  <a href="#meta">Metafields</a>
+  <a href="#files">Files</a>
+  <a href="#cart">Cart thumbnails</a>
+  <a href="#inspect">Inspecting a PDP</a>
+  <a href="#gaps">Differences vs Bauer</a>
+</nav>
+<details class="toc toc-m"><summary>On this page</summary><div class="in">
+  <a href="#hosts">Engine hosts</a>
+  <a href="#stores">Stores</a>
+  <a href="#resolve">URL resolution</a>
+  <a href="#live">Live helmets</a>
+  <a href="#dev">Dev catalog</a>
+  <a href="#meta">Metafields</a>
+  <a href="#files">Files</a>
+  <a href="#cart">Cart thumbnails</a>
+  <a href="#inspect">Inspecting a PDP</a>
+  <a href="#gaps">Differences vs Bauer</a>
+</div></details>
+<main>
+
+<h1>Cascade</h1>
+<p class="lede">Helmet customizer on Cascade Maverik. Shell is <code>jtb-snippet.liquid</code> (3,226 lines), not Bauer's section/snippet split. Admin + live HTML, 26 August 2026.</p>
+
+<div class="gold">
+  <p class="tag">An engine migration in progress</p>
+  <p>VU asked us to move to a new engine URL. Rather than cut every helmet over at once, we added a per-product override so old and new engine versions can run <strong>in parallel</strong>: Z and SL are on the new host, the other three are still on the theme default.</p>
+  <p>So two engine hosts in production is a migration state, not a quirk — but it is deliberate, and unpicking it ad hoc will break live PDPs.</p>
+  <span class="ask">New products use the new URL: <code>customizer.vucustom.com/{env}/main.js</code>.</span>
+</div>
+
+<h2 id="hosts">Engine hosts</h2>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Host</th><th>What</th><th>Used by</th></tr></thead>
+<tbody>
+<tr><td><code>vu-production.s3.amazonaws.com/customizer/main.js</code></td><td>Engine — <strong>legacy</strong> JTB bucket, being migrated away from</td><td>Current theme default: XRS Pro, XRS Youth, CPV-R</td></tr>
+<tr><td><code>customizer.vucustom.com/{env}/main.js</code></td><td>Engine — <strong>current</strong> host, VU's go-forward URL</td><td>Z + SL via per-product override. Use for all new products. Env folder is <code>production</code> live.</td></tr>
+<tr><td><code>silhouette3.jtbcustom.com/api/recipes/{id}/images/thumbnail</code></td><td>Recipe image API</td><td>Cart line thumbnails. Not the 3D app.</td></tr>
+<tr><td><code>vu-customizer.s3.amazonaws.com/{env}/main.js</code></td><td>Bauer's engine</td><td><strong>Nothing.</strong> Wrong brand.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="stores">Stores</h2>
+<div class="tablewrap">
+<table>
+<thead><tr><th></th><th>Production</th><th>Dev</th></tr></thead>
+<tbody>
+<tr><td>Admin</td><td><a href="https://admin.shopify.com/store/cascade-maverik-lacrosse">cascade-maverik-lacrosse</a></td><td><a href="https://admin.shopify.com/store/cascade-maverik-lacrosse-dev">cascade-maverik-lacrosse-dev</a></td></tr>
+<tr><td>Storefront</td><td><a href="https://cascademaverik.com">cascademaverik.com</a></td><td><code>cascade-maverik-lacrosse-dev.myshopify.com</code> — password wall</td></tr>
+<tr><td>myshopify</td><td><code>cascade-maverik-lacrosse.myshopify.com</code></td><td>Theme Access / editor use the typo shop <code>cascade-maverik-lacrosee-dev</code> (extra <code>e</code>). Same store.</td></tr>
+<tr><td>Published theme</td><td><code>187974648121</code> · “Z Helmet Launch - July 3, 2026” · CQL Propel 0.6.0</td><td><code>187459600693</code> (id in <code>shopify.theme.toml</code>)</td></tr>
+<tr><td>Files CDN</td><td><code>1/0753/7688/6073</code></td><td>—</td></tr>
+</tbody>
+</table>
+</div>
+<div class="call care">
+  <span class="lab">Password wall</span>
+  <p>Curling a dev PDP returns the password page, which has no <code>#customizer</code>. That is not evidence the snippet is missing. Use admin → <em>View on Online Store</em>, or the theme editor preview.</p>
+</div>
+
+<h2 id="resolve">URL resolution</h2>
+<pre class="arch">settings.jtb_custom_helmet_src              → default &lt;script src&gt;
+  IF product.metafields.custom.override_vu_src
+     → that URL wins
+
+settings.jtb_custom_helmet_environment      → default data-environment
+  IF product.metafields.custom.override_vu_environment
+     → that string wins</pre>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>Layer</th><th>Production</th><th>Dev</th></tr></thead>
+<tbody>
+<tr>
+  <td><code>jtb_custom_helmet_src</code></td>
+  <td><code>https://vu-production.s3.amazonaws.com/customizer/main.js</code><br><span class="small">Inferred: XRS / CPV-R have no override and this is what Liquid emitted.</span></td>
+  <td><strong>Not in git.</strong> Read from theme <code>187459600693</code> settings, or <code>#customizer[src]</code> on an XRS PDP.</td>
+</tr>
+<tr>
+  <td><code>jtb_custom_helmet_environment</code></td>
+  <td><code>production</code> on all five live PDPs, including Z / SL</td>
+  <td>Same method.</td>
+</tr>
+<tr>
+  <td><code>custom.override_vu_src</code></td>
+  <td>2 products (Z + SL) → <code>https://customizer.vucustom.com/production/main.js</code></td>
+  <td>2 products. Values unpinned in the form — read the PDP. Do not assume <code>/production/</code>.</td>
+</tr>
+<tr>
+  <td><code>custom.override_vu_environment</code></td>
+  <td>Defined on 2 products. Live <code>data-environment</code> is still <code>production</code>, so blank or also <code>production</code>.</td>
+  <td>2 products. Confirm on PDP.</td>
+</tr>
+<tr>
+  <td>Override VU Src Thumbnail</td>
+  <td>2 products. <strong>Not read by any Liquid.</strong></td>
+  <td>1 product. Same — unused.</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div class="call warn">
+  <span class="lab">Dev theme settings are not in git</span>
+  <p><code>jtb_custom_helmet_src</code> and <code>jtb_custom_helmet_environment</code> are absent from <code>sites/cascade-maverik/config/settings_schema.json</code> and <code>settings_data.json</code>. Publishing a theme built from this repo blanks <code>src</code> and every helmet customizer dies. Pull the live theme JSON or copy both values out of Theme settings before shipping.</p>
+</div>
+<div class="call rule">
+  <span class="lab">Why the override exists</span>
+  <p>VU asked us to move to the new engine URL. The override metafield was introduced so both engine versions could run side by side during the switch, one product at a time, instead of a single risky cutover.</p>
+  <p>Practical consequences: <strong>new products get the new URL</strong>; the three helmets still on the legacy bucket are unfinished migration, not a deliberate split; and the eventual tidy-up is to move them, flip <code>jtb_custom_helmet_src</code> to the new host, and drop the overrides. Coordinate that with VU rather than doing it opportunistically.</p>
+</div>
+
+<div class="call care">
+  <span class="lab">Independent overrides</span>
+  <p>Src and environment override separately, so a product can run a staging engine while reporting <code>data-environment="production"</code>. Nothing warns you. Check both.</p>
+</div>
+
+<h2 id="live">Live helmets</h2>
+<p>All five carry <code>#jtb-model</code> + <code>#customizer</code>, <code>data-environment="production"</code>, country hardcoded <code>us</code>. The CBX box helmet has neither element — expected.</p>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Title</th><th>Handle / ID</th><th>Engine</th><th>data-variant</th></tr></thead>
+<tbody>
+<tr><td>XRS Pro</td><td><a href="https://cascademaverik.com/products/custhelm-xrspro">custhelm-xrspro</a> · 8437604974905</td><td>Theme default</td><td><code>xrs-pro</code></td></tr>
+<tr><td>XRS Youth</td><td><a href="https://cascademaverik.com/products/xrs-youth-helmet">xrs-youth-helmet</a> · 8437604581689</td><td>Theme default</td><td><code>xrs-youth</code></td></tr>
+<tr><td>CPV-R</td><td><a href="https://cascademaverik.com/products/custhelm-cpvr-helmet">custhelm-cpvr-helmet</a> · 8437601272121</td><td>Theme default</td><td><code>cpv-r</code></td></tr>
+<tr><td>Z Helmet</td><td><a href="https://cascademaverik.com/products/z-custom-helmet">z-custom-helmet</a> · 10244500029753 · template <code>custom-z-helmet</code></td><td><strong>Override</strong></td><td><code>helmet-z</code></td></tr>
+<tr><td>SL Helmet</td><td><a href="https://cascademaverik.com/products/sl-custom-helmet">sl-custom-helmet</a> · 10013684433209</td><td><strong>Override</strong></td><td><code>lax-helmet-sl</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="dev">Dev catalog</h2>
+<p>Same metafield definitions, different product IDs. From admin — the storefront is password-gated.</p>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Title</th><th>Product ID</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td>Z Helmet</td><td>10453554954549</td><td>Template <code>custom-z-helmet</code>. One of the 2 override-src products.</td></tr>
+<tr><td>SL Custom Helmet</td><td>10183355367733</td><td>The other override-src product.</td></tr>
+<tr><td>XRS Pro Helmet</td><td>8363976753461</td><td><strong>Use this to read the theme default src</strong> — no override.</td></tr>
+<tr><td>XRS Youth Helmet</td><td>8363976098101</td><td>Theme default.</td></tr>
+<tr><td>CPV-R</td><td>8435572146485</td><td>Theme default.</td></tr>
+<tr><td>JTB Custom Test Product</td><td>8361366257973</td><td>Likely the 6th <code>data-variant</code> row. Ignore for launch.</td></tr>
+<tr><td>CS-R Helmet</td><td>8363976327477</td><td>Not a VU PDP in production. Verify <code>#customizer</code> before assuming.</td></tr>
+<tr><td>“DO NOT USE” / decal drafts</td><td>8363976…</td><td>Draft JTB option leftovers. Not engines.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="meta">Metafields</h2>
+<p>Namespace <code>custom</code>. Confirmed in Admin → Settings → Custom data → Products (81 defs prod / 55 dev).</p>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Admin name</th><th>Liquid</th><th>Prod</th><th>Dev</th></tr></thead>
+<tbody>
+<tr><td>data-variant</td><td><code>custom.data_variant</code></td><td>6</td><td>6</td></tr>
+<tr><td>Override VU Src</td><td><code>custom.override_vu_src</code></td><td>2</td><td>2</td></tr>
+<tr><td>Override VU Environment</td><td><code>custom.override_vu_environment</code></td><td>2</td><td>2</td></tr>
+<tr><td>Override VU Src Thumbnail</td><td>not read in git</td><td>2</td><td>1</td></tr>
+<tr><td>Custom Product CTA Label</td><td><code>custom.related_custom_product_label</code></td><td>5</td><td>5</td></tr>
+<tr><td>—</td><td><code>cql.customizer_product</code></td><td colspan="2">Stock PDP → customizable product</td></tr>
+</tbody>
+</table>
+</div>
+<p class="small">The override fields are unpinned, so they do not appear in the first metafields block on the product page. Search within the product's metafields, or skip admin and read the rendered tag.</p>
+
+<h2 id="files">Files</h2>
+<div class="tablewrap">
+<table>
+<thead><tr><th>File</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td><code>sites/cascade-maverik/snippets/jtb-snippet.liquid</code></td><td>Entire shell + engine script tag. 3,226 lines.</td></tr>
+<tr><td><code>sites/cascade-maverik/assets/global.js</code></td><td><code>.jtb-mod</code> → shows <code>#jtb-model</code>.</td></tr>
+<tr><td><code>sites/cascade-maverik/snippets/cart-item.liquid</code></td><td>Hardcoded silhouette3 thumbnail URL.</td></tr>
+<tr><td><code>sites/cascade-maverik/sections/main-product.liquid</code></td><td><code>show_customizer</code>, <code>.jtb-mod</code> button, CQL customizer link.</td></tr>
+</tbody>
+</table>
+</div>
+<p>No Sentry, no <code>vu_main.js</code>, no restore POC. As on Bauer, git has no <code>{% render 'jtb-snippet' %}</code> because product JSON is Theme Editor–only; the snippet is on the live PDPs.</p>
+
+<h2 id="cart">Cart thumbnails</h2>
+<p>The last line item property is treated as a recipe id:</p>
+<pre>https://silhouette3.jtbcustom.com/api/recipes/{recipeId}/images/thumbnail?{timestamp}</pre>
+<p>That host is VU's, not Shopify's — a 403 there is a vendor issue. The unused “Override VU Src Thumbnail” metafield was probably meant to swap this host per product for Z/SL on the newer engine, and was never wired into Liquid.</p>
+
+<h2 id="inspect">Inspecting a PDP</h2>
+<p>Faster and more reliable than admin, since the overrides are unpinned:</p>
+<pre>document.querySelector('#customizer').src
+document.querySelector('#customizer').dataset.environment
+document.querySelector('#customizer').dataset.variant</pre>
+
+<h2 id="gaps">Differences and constraints vs Bauer</h2>
+<ul class="check">
+  <li><b class="ct">No error tracking</b><p class="why">Helmet load failures surface only as console noise and a broken UI. Bauer's <code>vu_sentry.js</code> approach ports over conceptually, though the shell differs.</p></li>
+  <li><b class="ct">Monolithic snippet</b><p class="why">3,226 lines holding markup, behaviour and config. Hard to test, easy to regress.</p></li>
+  <li><b class="ct">Engine migration is unfinished</b><p class="why">Z and SL are on VU's new URL; XRS Pro, XRS Youth and CPV-R are still on the legacy bucket. The end state is everything on <code>customizer.vucustom.com</code>, at which point the theme default can be flipped and the overrides removed. Sequence the remaining three with VU — do not cut them over unilaterally.</p></li>
+  <li><b class="ct">Theme setting IDs unpublished</b><p class="why">A repo publish can silently blank <code>src</code>. The most likely way to break Cascade.</p></li>
+  <li><b class="ct">Dead metafield</b><p class="why">“Override VU Src Thumbnail” is set on live products and read by nothing. Wire it or remove the definition.</p></li>
+  <li><b class="ct">Fonts from another shop's Files</b><p class="why">Register templates pull D-DIN from <code>1/0555/9838/3422</code>, a client dev store. Same class of cross-store dependency as Bauer's icons, and site-wide rather than customizer-specific. See <a href="./dependencies.html#assets">Dependencies</a>.</p></li>
+</ul>
+
+<div class="pager">
+  <a href="./restore.html"><span class="dir">Previous</span><span class="ttl">&larr; Restore</span></a>
+  <a class="nx" href="./roadmap.html"><span class="dir">Next</span><span class="ttl">Upcoming projects &rarr;</span></a>
+</div>
+
+<footer><p><a href="./index.html">VU Customizers</a> · Cascade</p></footer>
+</main></div>
+<script src="./guide.js"></script>
+</body>
+</html>

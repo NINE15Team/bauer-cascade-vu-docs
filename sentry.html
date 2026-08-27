@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Sentry — VU Customizers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<link rel="stylesheet" href="./guide.css">
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <a class="brand" href="./index.html"><span class="dot"></span><b>VU Customizers</b></a>
+  <button class="tbtn" id="tt" type="button">Dark</button>
+</div></header>
+<div class="wrap"><nav class="toc toc-d" aria-label="Contents">
+  <h2>On this page</h2>
+  <a href="#why">Why it exists</a>
+  <a href="#order">Load order</a>
+  <a href="#project">Project and DSN</a>
+  <a href="#env">Environments</a>
+  <a href="#tags">Tags</a>
+  <a href="#capture">Capture paths</a>
+  <a href="#filters">Filters</a>
+  <a href="#alerts">Alert rules</a>
+  <a href="#vendor">Vendor-side behaviour</a>
+  <a href="#ops">Verification</a>
+</nav>
+<details class="toc toc-m"><summary>On this page</summary><div class="in">
+  <a href="#why">Why it exists</a>
+  <a href="#order">Load order</a>
+  <a href="#project">Project and DSN</a>
+  <a href="#env">Environments</a>
+  <a href="#tags">Tags</a>
+  <a href="#capture">Capture paths</a>
+  <a href="#filters">Filters</a>
+  <a href="#alerts">Alert rules</a>
+  <a href="#vendor">Vendor-side behaviour</a>
+  <a href="#ops">Verification</a>
+</div></details>
+<main>
+
+<h1>Sentry</h1>
+<p class="lede">Error tracking for the Bauer customizer. Instrumented so an S3 failure, a CORS'd thumbnail or a dead cart POST arrives with region, product, theme role and engine build attached. Cascade has no equivalent.</p>
+
+<div class="gold">
+  <p class="tag">Do not optimise this file</p>
+  <p>The Sentry tags are classic blocking scripts, above the inline injector that pulls VU's <code>main.js</code>. Adding <code>defer</code> or <code>async</code> means the engine's fetches are never instrumented — tracking silently reports nothing while appearing healthy.</p>
+</div>
+
+<h2 id="why">Why it exists</h2>
+<p>The engine is an opaque third-party bundle on S3. Theme JS cannot observe its GLB, texture or recipe failures unless something is initialised before it runs. <code>vu_sentry.js</code> is that something — it wraps <code>fetch</code> and installs capture-phase listeners early enough to see everything the engine does afterwards.</p>
+<p>It also has to survive ad blockers. If the Sentry CDN is blocked, the file installs a no-op <code>window.VuSentry</code> so <code>vu_main.js</code> and the snippet's <code>handleError</code> do not throw.</p>
+
+<h2 id="order">Load order</h2>
+<p>Top of <code>vu_customizer_snippet.liquid</code>. This sequence is load-bearing:</p>
+<ol>
+  <li><code>window.vuSentryConfig</code> — Liquid-filled: environment, variant, variantId, locale, shop, <code>main_source_url</code></li>
+  <li><code>browser.sentry-cdn.com/10.67.0/bundle.min.js</code> (SRI)</li>
+  <li><code>browser.sentry-cdn.com/10.67.0/httpclient.min.js</code> (SRI)</li>
+  <li><code>vu_sentry.js</code> — theme asset, blocking</li>
+  <li><code>vu_main.js</code> — deferred</li>
+  <li>Inline <code>loadScript(main_source)</code> — injects the S3 engine during parse</li>
+</ol>
+<div class="call care">
+  <span class="lab">SRI is pinned</span>
+  <p>Bumping the CDN version without updating both <code>integrity</code> attributes fails closed — correct behaviour, but it disables tracking silently. Test version bumps on a draft theme.</p>
+</div>
+<p class="small">Shopify auto-minifies theme JS and serves a public source map, so stack traces resolve without extra upload steps.</p>
+
+<h2 id="project">Project and DSN</h2>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Field</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Org</td><td><code>peak-achievement-athletics</code> (id 4507419639021568)</td></tr>
+<tr><td>Project</td><td><code>vu-customizer</code> (id 4511781528010752)</td></tr>
+<tr><td>Region</td><td>US</td></tr>
+<tr><td>DSN</td><td><code>https://3c82a90063606a7df7177ee2a7624f1f@o4507419639021568.ingest.us.sentry.io/4511781528010752</code></td></tr>
+<tr><td>Location</td><td>Hardcoded in <code>vu_sentry.js</code>. No theme setting — rotating means editing and deploying.</td></tr>
+<tr><td><code>sampleRate</code></td><td><code>1.0</code></td></tr>
+<tr><td><code>autoSessionTracking</code></td><td>off</td></tr>
+<tr><td><code>maxBreadcrumbs</code></td><td>50</td></tr>
+</tbody>
+</table>
+</div>
+<p>The public DSN in theme source is normal for browser SDKs — ingest-only. Org ownership must sit with PAA; confirm the members list before offboarding.</p>
+
+<h2 id="env">Environments</h2>
+<div class="call rule">
+  <span class="lab">Two different things named “environment”</span>
+  <p>Sentry <code>environment</code> = shopper exposure, derived from shop domain + theme role. <code>vu_engine</code> = which engine build loaded, from <code>settings.vu_customizer_environment</code>. They are independent. Alert on the first; never gate on the second.</p>
+</div>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Bucket</th><th>Condition</th><th>Alerting</th></tr></thead>
+<tbody>
+<tr><td><code>staging</code></td><td>Shop domain matches <code>*-dev.myshopify.com</code></td><td>Never. Noise.</td></tr>
+<tr><td><code>production-draft</code></td><td>Live shop, theme role ≠ <code>main</code></td><td>No. Watch during launches.</td></tr>
+<tr><td><code>production</code></td><td>Live shop + published <code>main</code> theme, or theme role unreadable</td><td>The only bucket prod alerts fire on.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Publishing a draft theme flips <code>production-draft</code> → <code>production</code>. If theme role cannot be read on a live shop we fail toward <code>production</code>, so real incidents are never hidden.</p>
+<p class="small">Region fallback when <code>customizer_values.country</code> is empty: hostname/shop string is scanned for <code>bauer-ca</code>/<code>ca.</code>, <code>se</code>, <code>fi</code>, <code>dk</code>, else <code>us</code>.</p>
+
+<h2 id="tags">Tags</h2>
+<p><code>beforeSend</code> stamps these when missing:</p>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Tag</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td><code>region</code></td><td>ca / us / se / fi / dk</td></tr>
+<tr><td><code>product</code>, <code>data_variant</code>, <code>variant_id</code></td><td>VU slug, VU model, Shopify variant</td></tr>
+<tr><td><code>locale</code>, <code>shop</code></td><td>Page locale, permanent domain</td></tr>
+<tr><td><code>vu_engine</code>, <code>main_source_url</code></td><td>Engine build and resolved URL</td></tr>
+<tr><td><code>theme_role</code>, <code>theme_id</code>, <code>theme_name</code></td><td>Theme identity</td></tr>
+<tr><td><code>vu_error_type</code></td><td><code>asset_load</code> · <code>add_to_cart</code> · <code>scene_timeout</code></td></tr>
+<tr><td><code>vu_asset_kind</code></td><td><code>thumbnail</code> when the failed URL is <code>/api/recipes/…/images</code></td></tr>
+<tr><td><code>vu_related</code></td><td><code>true</code> / <code>false</code></td></tr>
+<tr><td><code>vu_network_failure</code></td><td>CORS / bare TypeError on wrapped fetch</td></tr>
+</tbody>
+</table>
+</div>
+<p>Manual captures go through <code>VuSentry.capture(message, tags, extra)</code>. Fingerprint is <code>['vu', vu_error_type, message]</code> when a type is set, so identical failures group.</p>
+
+<h2 id="capture">Capture paths</h2>
+<ol class="steps">
+  <li><p><b class="st">httpClientIntegration</b>HTTP 400–599 on VU S3 hosts, <code>vucustom.com</code>, the recipe image API, and <code>/cart/add</code>.</p></li>
+  <li><p><b class="st">Capture-phase <code>error</code></b>On <code>script</code>/<code>link</code>/<code>img</code> whose URL matches the VU regex. These never reach <code>window.onerror</code>.</p></li>
+  <li><p><b class="st"><code>customizer.add-to-cart-fail</code></b>VU's own event. Detail JSON truncated to 2k chars.</p></li>
+  <li><p><b class="st">Wrapped <code>fetch</code></b>VU or cart URLs rejecting with a bare TypeError (CORS / DNS / offline). httpClient never sees these. The rejection is rethrown after capture.</p></li>
+  <li><p><b class="st">Snippet <code>handleError</code></b>S3 <code>main.js</code> <code>onerror</code> → <code>VU main.js failed to load</code>.</p></li>
+  <li><p><b class="st">80s scene timeout</b><code>vu_main.js</code> <code>openPopUpModal</code> (L1631/1635) → <code>VU scene render timeout (80s)</code> plus the failed-loading UI.</p></li>
+</ol>
+<div class="call tip">
+  <span class="lab">Deliberately absent</span>
+  <p>No manual <code>unhandledrejection</code> listener. The SDK's global handlers already capture rejections; adding ours double-reports. If you see duplicates, check whether one was re-added.</p>
+</div>
+<p class="small">VU-related URL matcher: <code>vu-customizer.s3.amazonaws.com</code> | <code>vu-admin.s3.amazonaws.com</code> | <code>s3.amazonaws.com/vu-os</code> | <code>vucustom.com</code> | <code>vu_main.js</code> | <code>vu_sentry.js</code> | <code>vu_customizer_restore_selections.js</code>.</p>
+
+<h2 id="filters">Filters</h2>
+<p><strong><code>ignoreErrors</code>:</strong> ResizeObserver loop, non-error promise rejection, <code>Script error.</code>, <code>globalThis is not defined</code>, in-app browser bridges (<code>instantSearchSDKJSBridgeClearHighlight</code>, <code>window.webkit.messageHandlers</code>).</p>
+<p><strong><code>denyUrls</code>:</strong> GTM, GA, DoubleClick, Klaviyo, Facebook, LinkedIn, Bing, all browser extensions.</p>
+<p>Thumbnail 4xx stay under <code>asset_load</code> with <code>vu_asset_kind=thumbnail</code>, so the existing 403/CORS rule still matches them.</p>
+
+<h2 id="alerts">Alert rules</h2>
+<p>All on <code>environment:production</code>, delivering to email and Slack.</p>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Rule</th><th>ID</th><th>Catches</th></tr></thead>
+<tbody>
+<tr><td>VU asset load failures (403/CORS)</td><td>17327456</td><td>GLB, texture or thumbnail failures</td></tr>
+<tr><td>VU add-to-cart failures</td><td>17327463</td><td>Completed design that could not be purchased</td></tr>
+<tr><td>New VU-related issue</td><td>17327457</td><td>Any first-seen customizer failure</td></tr>
+</tbody>
+</table>
+</div>
+<p>Slack: <strong>#bauer-vu-nine15</strong> (channel <code>C09AU9DU31N</code>, integration 473102) — a Bauer-owned Slack Connect channel shared with Nine15 and VU, so vendor issues can be raised where they surface. Uptime monitor <code>7881046</code> watches production <code>main.js</code>.</p>
+<p>Build new rules on <code>environment:production</code> + <code>vu_related:true</code> + the relevant <code>vu_error_type</code>. A temporary staging rule (17327497) was deleted 2026-07-24; do not recreate it.</p>
+<div class="call care">
+  <span class="lab">Cross-environment grouping</span>
+  <p>Issues group across environments, so an error first seen in <code>production-draft</code> is not “new” when it later occurs in <code>production</code> — the new-issue rule stays silent. Delete test issues before go-live. Use plain <strong>Delete</strong>, not delete-and-discard.</p>
+</div>
+
+<h2 id="vendor">Known vendor-side behaviour</h2>
+<div class="call care">
+  <span class="lab">Worth checking with VU before digging into the theme</span>
+  <p>During rollout the engine was seen requesting <code>vu-os/staging/templates/null_en-us.json</code> and receiving a 403 on supreme-fuse — a VU-side permissions issue, not a theme one. Separately, <code>customizer.vucustom.com</code> had a genuine CORS outage in July 2026 that VU fixed.</p>
+  <p>A sudden burst of network failures with no corresponding theme change is worth raising with VU first.</p>
+</div>
+
+<h2 id="ops">Verification</h2>
+<ul>
+  <li>Preview a draft theme on a live shop → environment should be <code>production-draft</code>.</li>
+  <li>Load a <code>*-dev</code> shop → <code>staging</code>.</li>
+  <li>Block the Sentry CDN in DevTools → the customizer must still open; <code>VuSentry.enabled === false</code>.</li>
+  <li>Set an invalid environment to force an S3 404 → <code>VU main.js failed to load</code> plus the failed-loading UI.</li>
+  <li>Confirm tags (region, product, theme role) are populated on a real event.</li>
+</ul>
+
+<div class="pager">
+  <a href="./operations-guide.html"><span class="dir">Previous</span><span class="ttl">&larr; Operations</span></a>
+  <a class="nx" href="./restore.html"><span class="dir">Next</span><span class="ttl">Restore &rarr;</span></a>
+</div>
+
+<footer><p><a href="./bauer.html">Bauer</a> · Sentry</p></footer>
+</main></div>
+<script src="./guide.js"></script>
+</body>
+</html>
